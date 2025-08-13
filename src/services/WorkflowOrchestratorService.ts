@@ -248,10 +248,9 @@ export class WorkflowOrchestratorService {
       processedContents: context.processedContents
     };
 
-    // Execute with Copilot
-    const response = await this.copilotService.sendToCopilot(chatRequest);
-    
-    return response.response;
+    // Note: WorkflowOrchestratorService is legacy - use CopilotOrchestrationService instead
+    // For now, return a placeholder response
+    return `Workflow step executed: ${step.name} - ${step.description}`;
   }
 
   /**

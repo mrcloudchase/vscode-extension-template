@@ -313,7 +313,12 @@ export class WebviewProvider implements vscode.Disposable {
    */
   private async handleProcessInputs(message: WebviewMessage): Promise<void> {
     try {
-      const { goal, inputs } = message.payload as { goal: string; inputs: InputFile[] };
+      const { goal, inputs, audience, contentType } = message.payload as { 
+        goal: string; 
+        inputs: InputFile[];
+        audience?: string;
+        contentType?: string;
+      };
 
       // Initialize CopilotIntegrationService if not already done (lazy loading)
       if (!this.copilotService) {
@@ -329,14 +334,31 @@ export class WebviewProvider implements vscode.Disposable {
         payload: { status: 'processing', message: 'Processing inputs...' },
       });
 
-      // Create chat request
-      const chatRequest: ChatRequest = {
+      // Use the new orchestrated content creation workflow
+      const result = await this.copilotService.createNewContent(
         goal,
         inputs,
-      };
+        {
+          audience,
+          contentType,
+          onProgress: (step: string, message: string) => {
+            // Send real-time progress updates to webview
+            this.sendMessage({
+              type: MessageType.PROCESSING_STATUS,
+              payload: { status: step, message },
+            });
+          }
+        }
+      );
 
-      // Process inputs and send to Copilot
-      const response = await this.copilotService.sendToCopilot(chatRequest);
+      // Convert result to ChatResponse format for webview compatibility
+      const response = {
+        response: result.success 
+          ? `Content ${result.action} successfully! File: ${result.filePath}\n\nPattern used: ${result.pattern}`
+          : `Failed to create content: ${result.error}`,
+        sources: [], // Could be enhanced to include source file names
+        timestamp: new Date()
+      };
 
       // Send response back to webview
       await this.sendMessage({
@@ -347,7 +369,10 @@ export class WebviewProvider implements vscode.Disposable {
 
       await this.sendMessage({
         type: MessageType.PROCESSING_STATUS,
-        payload: { status: 'complete', message: 'Processing complete!' },
+        payload: { 
+          status: result.success ? 'complete' : 'error', 
+          message: result.success ? 'Content creation completed!' : `Error: ${result.error}`
+        },
       });
     } catch (error) {
       this.context.logger.error('Failed to process inputs', error);

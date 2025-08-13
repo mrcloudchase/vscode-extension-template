@@ -4,7 +4,28 @@ import * as path from 'path';
 import { ExtensionContext } from '../types/ExtensionContext';
 import { ProcessedContent, ChatRequest, ChatResponse, InputFile } from '../models/InputModels';
 import { ContentPattern } from '../models/ContentPattern';
-import { RepositoryContextService, RepositoryStructure } from './RepositoryContextService';
+/**
+ * Repository structure information
+ */
+export interface RepositoryStructure {
+  rootPath: string;
+  structure: DirectoryNode;
+  markdownFiles: string[];
+  documentationDirectories: string[];
+  configFiles: string[];
+}
+
+/**
+ * Directory tree node
+ */
+export interface DirectoryNode {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  children?: DirectoryNode[];
+  size?: number;
+  isDocumentationRelated?: boolean;
+}
 import { ChatParticipantService } from './ChatParticipantService';
 import { ContentPatternService } from './ContentPatternService';
 import { InputHandlerService } from './InputHandlerService';
@@ -58,13 +79,11 @@ export interface CopilotContentResult {
  * Copilot-driven orchestration service that uses AI for all major decisions
  */
 export class CopilotOrchestrationService {
-  private repositoryContext: RepositoryContextService;
   private chatParticipant: ChatParticipantService;
   private patternService: ContentPatternService;
   private inputHandler: InputHandlerService;
 
   constructor(private context: ExtensionContext) {
-    this.repositoryContext = new RepositoryContextService(context);
     this.chatParticipant = new ChatParticipantService(context);
     this.patternService = new ContentPatternService(context);
     this.inputHandler = new InputHandlerService(context);
@@ -86,7 +105,7 @@ export class CopilotOrchestrationService {
       onProgress?.('repository', 'Analyzing repository structure...');
       
       // Step 2: Get repository context
-      const repositoryStructure = await this.repositoryContext.getRepositoryStructure();
+      const repositoryStructure = await this.getRepositoryStructure();
       
       onProgress?.('directory', 'Asking Copilot to select optimal directory...');
       
@@ -893,5 +912,119 @@ Generate the complete updated Markdown content.`;
     if (relevanceScore > 0.6) return 'High - significant topic overlap';
     if (relevanceScore > 0.3) return 'Medium - some topic overlap';
     return 'Low - minimal topic overlap';
+  }
+
+  /**
+   * Get repository structure for current workspace
+   */
+  private async getRepositoryStructure(): Promise<RepositoryStructure> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      throw new Error('No workspace folder found');
+    }
+
+    const rootPath = workspaceFolders[0].uri.fsPath;
+    
+    return {
+      rootPath,
+      structure: await this.buildDirectoryTree(rootPath),
+      markdownFiles: await this.findMarkdownFiles(rootPath),
+      documentationDirectories: await this.findDocumentationDirectories(rootPath),
+      configFiles: await this.findConfigFiles(rootPath)
+    };
+  }
+
+  /**
+   * Build directory tree structure
+   */
+  private async buildDirectoryTree(dirPath: string): Promise<DirectoryNode> {
+    const stats = await fs.promises.stat(dirPath);
+    const node: DirectoryNode = {
+      name: path.basename(dirPath),
+      path: dirPath,
+      type: stats.isDirectory() ? 'directory' : 'file',
+      size: stats.size
+    };
+
+    if (stats.isDirectory()) {
+      try {
+        const entries = await fs.promises.readdir(dirPath);
+        node.children = [];
+        
+        for (const entry of entries.slice(0, 50)) { // Limit for performance
+          if (entry.startsWith('.') && !['docs', 'documentation'].includes(entry)) continue;
+          
+          const entryPath = path.join(dirPath, entry);
+          try {
+            node.children.push(await this.buildDirectoryTree(entryPath));
+          } catch (error) {
+            // Skip entries we can't access
+          }
+        }
+      } catch (error) {
+        // Can't read directory
+      }
+    }
+
+    return node;
+  }
+
+  /**
+   * Find all markdown files in the workspace
+   */
+  private async findMarkdownFiles(rootPath: string): Promise<string[]> {
+    const markdownFiles: string[] = [];
+    
+    try {
+      const files = await vscode.workspace.findFiles('**/*.{md,markdown}', '**/node_modules/**', 100);
+      return files.map(file => file.fsPath);
+    } catch (error) {
+      return markdownFiles;
+    }
+  }
+
+  /**
+   * Find documentation directories
+   */
+  private async findDocumentationDirectories(rootPath: string): Promise<string[]> {
+    const docDirs: string[] = [];
+    const commonDocDirs = ['docs', 'documentation', 'doc', 'guide', 'guides', 'api', 'wiki'];
+    
+    for (const dirName of commonDocDirs) {
+      const dirPath = path.join(rootPath, dirName);
+      try {
+        const stats = await fs.promises.stat(dirPath);
+        if (stats.isDirectory()) {
+          docDirs.push(dirPath);
+        }
+      } catch (error) {
+        // Directory doesn't exist
+      }
+    }
+    
+    return docDirs;
+  }
+
+  /**
+   * Find configuration files
+   */
+  private async findConfigFiles(rootPath: string): Promise<string[]> {
+    const configFiles: string[] = [];
+    const commonConfigFiles = [
+      'package.json', 'requirements.txt', 'setup.py', 'cargo.toml', 'go.mod',
+      'pom.xml', 'build.gradle', 'README.md', 'README.rst'
+    ];
+    
+    for (const fileName of commonConfigFiles) {
+      const filePath = path.join(rootPath, fileName);
+      try {
+        await fs.promises.stat(filePath);
+        configFiles.push(fileName);
+      } catch (error) {
+        // File doesn't exist
+      }
+    }
+    
+    return configFiles;
   }
 }
