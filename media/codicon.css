@@ -1,0 +1,55 @@
+/* Codicon icon font - subset of VS Code's icon font */
+@font-face {
+  font-family: 'codicon';
+  src: url('https://microsoft.github.io/vscode-codicons/dist/codicon.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.codicon {
+  font-family: 'codicon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  text-decoration: none;
+  text-rendering: auto;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Common icons */
+.codicon-refresh:before { content: '\eb37' }
+.codicon-settings-gear:before { content: '\eb51' }
+.codicon-code:before { content: '\eb14' }
+.codicon-layers:before { content: '\eb94' }
+.codicon-sync:before { content: '\eb59' }
+.codicon-color-mode:before { content: '\eb12' }
+.codicon-save:before { content: '\eb4b' }
+.codicon-folder:before { content: '\ea83' }
+.codicon-file:before { content: '\ea7b' }
+.codicon-search:before { content: '\ea6d' }
+.codicon-close:before { content: '\ea76' }
+.codicon-check:before { content: '\eab2' }
+.codicon-error:before { content: '\ea87' }
+.codicon-warning:before { content: '\ea6c' }
+.codicon-info:before { content: '\ea74' }
+.codicon-debug:before { content: '\eabc' }
+.codicon-terminal:before { content: '\ea85' }
+.codicon-globe:before { content: '\eb21' }
+.codicon-database:before { content: '\eb1c' }
+.codicon-server:before { content: '\eb29' }
+.codicon-extensions:before { content: '\eb0e' }
+.codicon-account:before { content: '\eb99' }
+.codicon-bell:before { content: '\eb09' }
+.codicon-bookmark:before { content: '\ea7c' }
+.codicon-dashboard:before { content: '\eb28' }
+.codicon-history:before { content: '\ea82' }
+.codicon-link:before { content: '\eb15' }

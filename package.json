@@ -1,0 +1,96 @@
+{
+  "name": "vscode-webview-extension-template",
+  "displayName": "VSCode WebView Extension Template",
+  "description": "A modern template for building VSCode extensions with WebView support",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "vscode",
+    "extension",
+    "webview",
+    "template"
+  ],
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/vscode-extension-template"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-webview-extension.openWebview",
+        "title": "Open WebView",
+        "category": "WebView Extension"
+      },
+      {
+        "command": "vscode-webview-extension.refresh",
+        "title": "Refresh WebView",
+        "category": "WebView Extension"
+      }
+    ],
+    "configuration": {
+      "title": "WebView Extension",
+      "properties": {
+        "vscode-webview-extension.enableDebugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug mode for the extension"
+        },
+        "vscode-webview-extension.theme": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "light", "dark"],
+          "description": "Color theme for the webview"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscode-webview-extension.refresh",
+          "when": "view == webviewPanel",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/mocha": "^10.0.8",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "glob": "^11.0.0",
+    "mocha": "^10.7.3",
+    "prettier": "^3.3.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4"
+  }
+}

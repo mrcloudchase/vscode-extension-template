@@ -1,0 +1,19 @@
+# Icon Placeholder
+
+Please replace this file with your actual extension icon (PNG format, 128x128px recommended).
+
+The icon should be:
+- Clear and recognizable at small sizes
+- Following VS Code's design guidelines
+- In PNG format with transparent background
+- At least 128x128 pixels (256x256 for retina displays)
+
+You can use tools like:
+- Figma
+- Adobe Illustrator
+- Inkscape
+- Canva
+
+For icon inspiration, check:
+- https://code.visualstudio.com/api/references/extension-manifest#icon-guidelines
+- https://github.com/microsoft/vscode-icons
