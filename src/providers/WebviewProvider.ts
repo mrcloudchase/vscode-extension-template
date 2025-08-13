@@ -329,7 +329,7 @@ export class WebviewProvider implements vscode.Disposable {
   }
 
   /**
-   * Handle input processing
+   * Handle input processing - Updated for Chat Participant workflow
    */
   private async handleProcessInputs(message: WebviewMessage): Promise<void> {
     try {
@@ -351,10 +351,10 @@ export class WebviewProvider implements vscode.Disposable {
       // Send processing status
       await this.sendMessage({
         type: MessageType.PROCESSING_STATUS,
-        payload: { status: 'processing', message: 'Processing inputs...' },
+        payload: { status: 'processing', message: 'Preparing content request...' },
       });
 
-      // Use the new orchestrated content creation workflow
+      // Use the new Chat Participant workflow
       const result = await this.copilotService.createNewContent(
         goal,
         inputs,
@@ -371,12 +371,12 @@ export class WebviewProvider implements vscode.Disposable {
         }
       );
 
-      // Convert result to ChatResponse format for webview compatibility
+      // For Chat Participant workflow, we notify user that the chat has been opened
       const response = {
         response: result.success 
-          ? `Content ${result.action.toLowerCase()} successfully!\n\nFile: ${result.filePath}\n\nWorkflow Steps:\n${this.formatWorkflowSteps(result.steps)}`
-          : `Failed to create content: ${result.error}`,
-        sources: [], // Could be enhanced to include source file names
+          ? `🤖 **Chat Participant Activated!**\n\nYour request has been sent to the @content-creator chat participant. The sequential workflow will continue in the VS Code Chat interface.\n\n**Next Steps:**\n1. Check the Chat panel (should have opened automatically)\n2. The @content-creator participant will guide you through the workflow\n3. You'll see real-time progress as it analyzes your repository and creates content\n\n**Your Request:** ${goal}\n**Input Files:** ${inputs.length} file(s) processed`
+          : `❌ **Failed to launch Chat Participant**\n\nError: ${result.error}\n\nPlease try again or check the extension logs for more details.`,
+        sources: inputs.map(input => input.name),
         timestamp: new Date()
       };
 
@@ -387,13 +387,37 @@ export class WebviewProvider implements vscode.Disposable {
         id: message.id,
       });
 
+      // Show final status
       await this.sendMessage({
         type: MessageType.PROCESSING_STATUS,
         payload: { 
-          status: result.success ? 'complete' : 'error', 
-          message: result.success ? 'Content creation completed!' : `Error: ${result.error}`
+          status: result.success ? 'launched' : 'error', 
+          message: result.success 
+            ? 'Chat participant launched! Continue in the Chat panel.' 
+            : `Error: ${result.error}`
         },
       });
+
+      // Show chat participant status
+      const chatStatus = this.copilotService.getChatParticipantStatus();
+      if (!chatStatus.isSupported) {
+        await this.sendMessage({
+          type: MessageType.SHOW_MESSAGE,
+          payload: {
+            type: 'warning',
+            text: 'Chat Participant API not supported in this VS Code version. Please update VS Code.'
+          }
+        });
+      } else if (!chatStatus.isRegistered) {
+        await this.sendMessage({
+          type: MessageType.SHOW_MESSAGE,
+          payload: {
+            type: 'error',
+            text: 'Chat Participant failed to register. Please restart the extension.'
+          }
+        });
+      }
+
     } catch (error) {
       this.context.logger.error('Failed to process inputs', error);
       

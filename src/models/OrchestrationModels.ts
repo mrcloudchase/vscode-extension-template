@@ -107,7 +107,7 @@ export interface WorkflowStepResult<T> {
 export interface OrchestrationResult {
   success: boolean;
   filePath?: string;
-  action: 'CREATED' | 'UPDATED';
+  action: 'CREATED' | 'UPDATED' | 'INITIATED' | 'FAILED';
   steps: {
     directorySelection?: WorkflowStepResult<DirectorySelectionSchema>;
     contentStrategy?: WorkflowStepResult<ContentStrategySchema>;
@@ -115,4 +115,5 @@ export interface OrchestrationResult {
     contentGeneration?: WorkflowStepResult<ContentGenerationSchema>;
   };
   error?: string;
+  message?: string;
 }

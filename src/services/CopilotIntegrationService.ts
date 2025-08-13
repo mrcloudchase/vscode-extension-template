@@ -1,58 +1,30 @@
 import * as vscode from 'vscode';
 import { ExtensionContext } from '../types/ExtensionContext';
-import { 
-  InputFile, 
-  ProcessedContent,
-  ChatRequest, 
-  ChatResponse 
-} from '../models/InputModels';
+import { ChatParticipantService } from './ChatParticipantService';
+import { InputFile, ProcessedContent } from '../models/InputModels';
+import { OrchestrationResult } from '../models/OrchestrationModels';
 import { InputHandlerService } from './InputHandlerService';
 
-
-
-import { ContentPatternService } from './ContentPatternService';
-import { ContentPattern } from '../models/ContentPattern';
-
-import { AutomatedOrchestrationService } from './AutomatedOrchestrationService';
-import { AutomatedChatParticipantService } from './AutomatedChatParticipantService';
-import { OrchestrationResult } from '../models/OrchestrationModels';
-
 /**
- * Main service for integrating with Copilot Chat using systematic workflow
+ * Main service for integrating with VS Code Chat Participant API
+ * Orchestrates the new sequential workflow approach
  */
 export default class CopilotIntegrationService {
+  private chatParticipant: ChatParticipantService;
   private inputHandler: InputHandlerService;
-  private patternService: ContentPatternService;
-  private automatedOrchestrator: AutomatedOrchestrationService;
-  private automatedChatParticipant: AutomatedChatParticipantService;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
+    this.chatParticipant = new ChatParticipantService(context);
     this.inputHandler = new InputHandlerService(context);
-    this.patternService = new ContentPatternService(context);
-    this.automatedOrchestrator = new AutomatedOrchestrationService(context);
-    this.automatedChatParticipant = new AutomatedChatParticipantService(context);
     
-    // Set up bidirectional dependency
-    this.automatedChatParticipant.setOrchestrator(this.automatedOrchestrator);
-    
-    // Register automated chat participant
-    this.automatedChatParticipant.registerChatParticipant();
+    // Register the chat participant on initialization
+    this.chatParticipant.registerChatParticipant();
   }
 
   /**
-   * Process all inputs and prepare for Copilot
-   */
-  async processInputs(inputs: InputFile[]): Promise<ProcessedContent[]> {
-    this.context.logger.info(`Processing ${inputs.length} input files`);
-    this.processedContents = await this.inputHandler.processInputs(inputs);
-    return this.processedContents;
-  }
-
-
-
-  /**
-   * Create new content using fully automated workflow  
+   * Process input files and trigger content creation workflow
+   * This method is called from the webview when users submit content requests
    */
   async createNewContent(
     contentRequest: string,
@@ -60,27 +32,62 @@ export default class CopilotIntegrationService {
     options?: {
       audience?: string;
       contentType?: string;
-      selectedPatternId?: string;
       onProgress?: (step: string, message: string) => void;
     }
   ): Promise<OrchestrationResult> {
     try {
-      // Use the fully automated orchestration workflow
-      return await this.automatedOrchestrator.executeWorkflow(
-        contentRequest,
-        inputs,
-        {
-          audience: options?.audience,
-          contentType: options?.contentType,
-          onProgress: options?.onProgress
-        }
-      );
+      this.context.logger.info('Starting content creation workflow from webview');
       
+      // Process input files first
+      if (inputs && inputs.length > 0) {
+        options?.onProgress?.('Processing', 'Processing input files...');
+        this.processedContents = await this.inputHandler.processInputs(inputs);
+        this.context.logger.info(`Processed ${this.processedContents.length} input files`);
+      }
+
+      // For webview requests, we need to open the chat and guide the user to use the chat participant
+      // The actual workflow will be handled by the ChatParticipantService when user interacts with @content-creator
+
+      // Prepare the enhanced content request with processed inputs
+      let enhancedRequest = contentRequest;
+      
+      if (this.processedContents.length > 0) {
+        enhancedRequest += '\n\n**Input Materials:**\n';
+        for (const content of this.processedContents) {
+          enhancedRequest += `- ${content.source}: ${content.text.substring(0, 200)}...\n`;
+        }
+      }
+
+      if (options?.audience) {
+        enhancedRequest += `\n**Target Audience:** ${options.audience}`;
+      }
+      
+      if (options?.contentType) {
+        enhancedRequest += `\n**Content Type:** ${options.contentType}`;
+      }
+
+      // Open chat with the enhanced request
+      const chatQuery = `@content-creator ${enhancedRequest}`;
+      
+      options?.onProgress?.('Launching', 'Opening chat participant...');
+      
+      await vscode.commands.executeCommand('workbench.action.chat.open', {
+        query: chatQuery
+      });
+
+      // Return success indicating that the chat workflow has been initiated
+      return {
+        success: true,
+        action: 'INITIATED',
+        steps: {},
+        message: 'Chat participant workflow initiated. The sequential content creation process will continue in the chat interface.'
+      };
+
     } catch (error) {
-      this.context.logger.error('Failed to execute automated workflow:', error);
+      this.context.logger.error('Failed to initiate content creation workflow:', error);
       return {
         success: false,
-        action: 'CREATED',
+        action: 'FAILED',
         steps: {},
         error: error instanceof Error ? error.message : String(error)
       };
@@ -88,25 +95,37 @@ export default class CopilotIntegrationService {
   }
 
   /**
-   * Get available content patterns
+   * Get the processed contents from input files
+   * This can be called by the chat participant to access file contents
    */
-  getAvailableContentPatterns(): ContentPattern[] {
-    return this.patternService.getAvailablePatterns();
+  public getProcessedContents(): ProcessedContent[] {
+    return this.processedContents;
   }
 
   /**
-   * Get content pattern by ID
+   * Clear processed contents
    */
-  getContentPatternById(id: string): ContentPattern | undefined {
-    return this.patternService.getPatternById(id);
+  public clearProcessedContents(): void {
+    this.processedContents = [];
   }
 
-
+  /**
+   * Get chat participant status
+   */
+  public getChatParticipantStatus(): { isSupported: boolean; isRegistered: boolean } {
+    return this.chatParticipant.getParticipantStatus();
+  }
 
   /**
-   * Get Automated Chat Participant status for debugging
+   * Legacy method - now redirects to new workflow
+   * @deprecated Use createNewContent instead
    */
-  getChatParticipantStatus() {
-    return this.automatedChatParticipant.getParticipantStatus();
+  public async sendToCopilot(request: any): Promise<any> {
+    this.context.logger.warn('sendToCopilot is deprecated, redirecting to new workflow');
+    
+    const contentRequest = request.message || request.prompt || 'Create documentation';
+    const inputs = request.inputs || [];
+    
+    return this.createNewContent(contentRequest, inputs);
   }
 }

@@ -67,7 +67,7 @@
     },
     "chatParticipants": [
       {
-        "id": "content-creator",
+        "id": "vscode-webview-extension.content-creator",
         "fullName": "Content Creator",
         "name": "content-creator",
         "description": "Create professional technical documentation with AI assistance",
