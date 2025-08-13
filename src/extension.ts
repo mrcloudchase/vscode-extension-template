@@ -15,43 +15,59 @@ let logger: Logger | undefined;
  * Your extension is activated the very first time the command is executed
  */
 export function activate(context: vscode.ExtensionContext): void {
-  // Initialize logger
-  logger = new Logger('VSCode WebView Extension');
-  logger.info('Extension is being activated');
+  try {
+    console.log('VSCode WebView Extension: Starting activation...');
+    
+    // Initialize logger
+    logger = new Logger('VSCode WebView Extension');
+    logger.info('Extension is being activated');
 
-  // Initialize configuration manager
-  configManager = new ConfigurationManager();
+    // Initialize configuration manager
+    configManager = new ConfigurationManager();
+    logger.info('Configuration manager initialized');
 
-  // Create extension context
-  const extensionContext: ExtensionContext = {
-    vscodeContext: context,
-    logger,
-    configManager,
-  };
+    // Create extension context
+    const extensionContext: ExtensionContext = {
+      vscodeContext: context,
+      logger,
+      configManager,
+    };
 
-  // Initialize webview provider
-  webviewProvider = new WebviewProvider(extensionContext);
+    // Initialize webview provider
+    webviewProvider = new WebviewProvider(extensionContext);
+    logger.info('WebView provider initialized');
 
-  // Initialize command manager
-  commandManager = new CommandManager(extensionContext, webviewProvider);
+    // Initialize command manager
+    commandManager = new CommandManager(extensionContext, webviewProvider);
+    logger.info('Command manager initialized');
 
-  // Register all commands
-  commandManager.registerCommands();
+    // Register all commands
+    commandManager.registerCommands();
+    logger.info('Commands registered');
 
-  // Watch for configuration changes
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('vscode-webview-extension')) {
-        configManager!.reload();
-        logger!.info('Configuration reloaded');
+    // Watch for configuration changes
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration('vscode-webview-extension')) {
+          configManager!.reload();
+          logger!.info('Configuration reloaded');
 
-        // Notify webview of configuration changes
-        void webviewProvider?.notifyConfigurationChange();
-      }
-    })
-  );
+          // Notify webview of configuration changes
+          void webviewProvider?.notifyConfigurationChange();
+        }
+      })
+    );
 
-  logger.info('Extension has been activated successfully');
+    logger.info('Extension has been activated successfully');
+    console.log('VSCode WebView Extension: Activation completed successfully');
+    
+    // Show success message
+    vscode.window.showInformationMessage('WebView Extension activated successfully!');
+  } catch (error) {
+    console.error('VSCode WebView Extension: Activation failed:', error);
+    vscode.window.showErrorMessage(`Extension activation failed: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
 }
 
 /**

@@ -20,13 +20,21 @@ export enum MessageType {
   UPDATE_THEME = 'updateTheme',
   UPDATE_CONFIG = 'updateConfig',
   SHOW_MESSAGE = 'showMessage',
-
+  PROCESSING_STATUS = 'processingStatus',
+  COPILOT_RESPONSE = 'copilotResponse',
+  WORKFLOW_STEP_COMPLETE = 'workflowStepComplete',
+  WORKFLOW_RESULT = 'workflowResult',
+  
   // From webview to extension
   REQUEST_DATA = 'requestData',
   SAVE_DATA = 'saveData',
   EXECUTE_COMMAND = 'executeCommand',
   LOG_MESSAGE = 'logMessage',
   READY = 'ready',
+  PROCESS_INPUTS = 'processInputs',
+  SELECT_FILES = 'selectFiles',
+  EXECUTE_WORKFLOW = 'executeWorkflow',
+  GET_WORKFLOWS = 'getWorkflows',
 }
 
 /**

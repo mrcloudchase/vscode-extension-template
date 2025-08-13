@@ -6,13 +6,17 @@ import {
   MessageType,
   WebviewState,
 } from '../types/ExtensionContext';
+import { InputFile, InputType, ChatRequest } from '../models/InputModels';
 
 export class WebviewProvider implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private disposables: vscode.Disposable[] = [];
   private state: WebviewState = { isReady: false };
+  private copilotService: any | undefined;
 
-  constructor(private context: ExtensionContext) {}
+  constructor(private context: ExtensionContext) {
+    // Initialize CopilotIntegrationService lazily to avoid activation issues
+  }
 
   /**
    * Create or show the webview panel
@@ -147,6 +151,14 @@ export class WebviewProvider implements vscode.Disposable {
         this.handleLogMessage(message);
         break;
 
+      case MessageType.PROCESS_INPUTS:
+        await this.handleProcessInputs(message);
+        break;
+
+      case MessageType.SELECT_FILES:
+        await this.handleSelectFiles(message);
+        break;
+
       default:
         this.context.logger.warn(`Unknown message type: ${message.type}`);
     }
@@ -264,6 +276,93 @@ export class WebviewProvider implements vscode.Disposable {
   }
 
   /**
+   * Handle file selection
+   */
+  private async handleSelectFiles(message: WebviewMessage): Promise<void> {
+    try {
+      const options: vscode.OpenDialogOptions = {
+        canSelectMany: true,
+        filters: {
+          'Documents': ['docx', 'doc', 'pdf', 'pptx', 'ppt', 'txt', 'md'],
+          'All Files': ['*']
+        }
+      };
+
+      const fileUris = await vscode.window.showOpenDialog(options);
+      
+      if (fileUris && fileUris.length > 0) {
+        const files: InputFile[] = fileUris.map(uri => ({
+          uri: uri.toString(),
+          name: uri.path.split('/').pop() || 'Unknown',
+          type: InputType.UNKNOWN,
+        }));
+
+        await this.sendMessage({
+          type: MessageType.UPDATE_CONTENT,
+          payload: { files },
+          id: message.id,
+        });
+      }
+    } catch (error) {
+      this.context.logger.error('Failed to select files', error);
+    }
+  }
+
+  /**
+   * Handle input processing
+   */
+  private async handleProcessInputs(message: WebviewMessage): Promise<void> {
+    try {
+      const { goal, inputs } = message.payload as { goal: string; inputs: InputFile[] };
+
+      // Initialize CopilotIntegrationService if not already done (lazy loading)
+      if (!this.copilotService) {
+        this.context.logger.debug('Lazy loading CopilotIntegrationService...');
+        const CopilotIntegrationService = (await import('../services/CopilotIntegrationService')).default;
+        this.copilotService = new CopilotIntegrationService(this.context);
+        this.context.logger.debug('CopilotIntegrationService loaded successfully');
+      }
+
+      // Send processing status
+      await this.sendMessage({
+        type: MessageType.PROCESSING_STATUS,
+        payload: { status: 'processing', message: 'Processing inputs...' },
+      });
+
+      // Create chat request
+      const chatRequest: ChatRequest = {
+        goal,
+        inputs,
+      };
+
+      // Process inputs and send to Copilot
+      const response = await this.copilotService.sendToCopilot(chatRequest);
+
+      // Send response back to webview
+      await this.sendMessage({
+        type: MessageType.COPILOT_RESPONSE,
+        payload: response,
+        id: message.id,
+      });
+
+      await this.sendMessage({
+        type: MessageType.PROCESSING_STATUS,
+        payload: { status: 'complete', message: 'Processing complete!' },
+      });
+    } catch (error) {
+      this.context.logger.error('Failed to process inputs', error);
+      
+      await this.sendMessage({
+        type: MessageType.PROCESSING_STATUS,
+        payload: { 
+          status: 'error', 
+          message: `Error: ${error instanceof Error ? error.message : String(error)}` 
+        },
+      });
+    }
+  }
+
+  /**
    * Get HTML content for webview
    */
   private getHtmlContent(webview: vscode.Webview): string {
@@ -334,14 +433,47 @@ export class WebviewProvider implements vscode.Disposable {
                         </div>
                     </div>
                     
-                    <div class="action-section">
-                        <h3>Try It Out</h3>
-                        <div class="button-group">
-                            <button id="load-data-btn" class="primary-btn">Load Data</button>
-                            <button id="save-data-btn" class="secondary-btn">Save Data</button>
-                            <button id="show-notification-btn" class="secondary-btn">Show Notification</button>
+                                    <div class="action-section">
+                    <h3>Process Documents with Copilot</h3>
+                    
+                    <div class="input-section">
+                        <h4>1. Add Your Inputs</h4>
+                        <div class="input-controls">
+                            <button id="select-files-btn" class="primary-btn">Select Files</button>
+                            <button id="add-url-btn" class="secondary-btn">Add URL</button>
+                            <button id="add-github-pr-btn" class="secondary-btn">Add GitHub PR</button>
+                        </div>
+                        
+                        <div id="input-list" class="input-list"></div>
+                        
+                        <div class="url-input-container hidden" id="url-input-container">
+                            <input type="text" id="url-input" placeholder="Enter URL..." />
+                            <button id="add-url-confirm" class="secondary-btn">Add</button>
+                        </div>
+                        
+                        <div class="github-input-container hidden" id="github-input-container">
+                            <input type="text" id="github-input" placeholder="Enter GitHub PR URL..." />
+                            <button id="add-github-confirm" class="secondary-btn">Add</button>
                         </div>
                     </div>
+                    
+                    <div class="goal-section">
+                        <h4>2. Describe Your Goal</h4>
+                        <textarea id="goal-input" placeholder="What would you like to do with these inputs? (e.g., 'Summarize the key points', 'Compare these documents', 'Extract action items')"></textarea>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="process-btn" class="primary-btn" disabled>Process with Copilot</button>
+                        <button id="clear-btn" class="secondary-btn">Clear All</button>
+                    </div>
+                    
+                    <div id="processing-status" class="processing-status hidden"></div>
+                </div>
+                
+                <div id="response-section" class="response-section hidden">
+                    <h3>Copilot Response</h3>
+                    <div id="response-content"></div>
+                </div>
                     
                     <div id="data-display" class="data-display hidden">
                         <h3>Data Display</h3>
