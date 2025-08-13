@@ -210,6 +210,26 @@ export class WebviewProvider implements vscode.Disposable {
   }
 
   /**
+   * Format workflow steps for display
+   */
+  private formatWorkflowSteps(steps: any): string {
+    const parts: string[] = [];
+    if (steps.directorySelection?.success) {
+      parts.push(`✅ Directory: ${steps.directorySelection.data?.selectedDirectory}`);
+    }
+    if (steps.contentStrategy?.success) {
+      parts.push(`✅ Strategy: ${steps.contentStrategy.data?.action}`);
+    }
+    if (steps.patternSelection?.success) {
+      parts.push(`✅ Pattern: ${steps.patternSelection.data?.patternName}`);
+    }
+    if (steps.contentGeneration?.success) {
+      parts.push(`✅ Generated: ${steps.contentGeneration.data?.title}`);
+    }
+    return parts.join('\n');
+  }
+
+  /**
    * Handle data save from webview
    */
   private async handleDataSave(message: WebviewMessage): Promise<void> {
@@ -354,7 +374,7 @@ export class WebviewProvider implements vscode.Disposable {
       // Convert result to ChatResponse format for webview compatibility
       const response = {
         response: result.success 
-          ? `Content ${result.action} successfully! File: ${result.filePath}\n\nPattern used: ${result.pattern}`
+          ? `Content ${result.action.toLowerCase()} successfully!\n\nFile: ${result.filePath}\n\nWorkflow Steps:\n${this.formatWorkflowSteps(result.steps)}`
           : `Failed to create content: ${result.error}`,
         sources: [], // Could be enhanced to include source file names
         timestamp: new Date()

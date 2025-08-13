@@ -84,6 +84,8 @@ export class PromptService {
     }
   }
 
+
+
   /**
    * Extract metadata from prompt content
    */
@@ -145,28 +147,37 @@ export class PromptService {
 
   /**
    * Render a prompt with variables
+   * Can accept either a promptId or a template string
    */
-  public renderPrompt(promptId: string, variables: Record<string, string>): string {
-    const prompt = this.getPrompt(promptId);
-    if (!prompt) {
-      throw new Error(`Prompt not found: ${promptId}`);
+  public renderPrompt(promptIdOrTemplate: string, variables: Record<string, string>): string {
+    let template: string;
+    
+    // Check if it's a prompt ID (contains slash) or a template (contains {{)
+    if (promptIdOrTemplate.includes('/') && !promptIdOrTemplate.includes('{{')) {
+      // It's a prompt ID
+      const prompt = this.getPrompt(promptIdOrTemplate);
+      if (!prompt) {
+        throw new Error(`Prompt not found: ${promptIdOrTemplate}`);
+      }
+      template = prompt.content;
+    } else {
+      // It's a template string
+      template = promptIdOrTemplate;
     }
-
-    let renderedContent = prompt.content;
     
     // Replace all variables
     for (const [key, value] of Object.entries(variables)) {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      renderedContent = renderedContent.replace(regex, value);
+      template = template.replace(regex, value);
     }
 
     // Check for unreplaced variables
-    const unReplacedVars = renderedContent.match(/\{\{\w+\}\}/g);
+    const unReplacedVars = template.match(/\{\{\w+\}\}/g);
     if (unReplacedVars) {
-      this.context.logger.warn(`Unreplaced variables in prompt ${promptId}:`, unReplacedVars);
+      this.context.logger.warn(`Unreplaced variables:`, unReplacedVars);
     }
 
-    return renderedContent;
+    return template;
   }
 
   /**
