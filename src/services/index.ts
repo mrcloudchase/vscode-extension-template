@@ -9,6 +9,7 @@ export { RepositoryContextService } from './RepositoryContextService';
 export { DirectorySelectionService } from './DirectorySelectionService';
 export { ContentCreationService } from './ContentCreationService';
 export { ContentPatternService } from './ContentPatternService';
+export { ChatParticipantService } from './ChatParticipantService';
 export { WordDocumentService } from './WordDocumentService';
 export { PDFService } from './PDFService';
 export { PowerPointService } from './PowerPointService';

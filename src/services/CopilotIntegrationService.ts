@@ -13,6 +13,7 @@ import { DirectorySelectionService, DirectorySelection } from './DirectorySelect
 import { ContentCreationService, ContentCreationRequest, ContentCreationResult } from './ContentCreationService';
 import { ContentPatternService } from './ContentPatternService';
 import { ContentPattern } from '../models/ContentPattern';
+import { ChatParticipantService } from './ChatParticipantService';
 
 /**
  * Main service for integrating with Copilot Chat
@@ -24,6 +25,7 @@ export default class CopilotIntegrationService {
   private directorySelector: DirectorySelectionService;
   private contentCreator: ContentCreationService;
   private patternService: ContentPatternService;
+  private chatParticipant: ChatParticipantService;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
@@ -33,6 +35,10 @@ export default class CopilotIntegrationService {
     this.directorySelector = new DirectorySelectionService(context);
     this.contentCreator = new ContentCreationService(context);
     this.patternService = new ContentPatternService(context);
+    this.chatParticipant = new ChatParticipantService(context);
+    
+    // Register chat participant if supported
+    this.chatParticipant.registerChatParticipant();
   }
 
   /**
@@ -163,14 +169,32 @@ export default class CopilotIntegrationService {
   }
 
   /**
+   * Get Chat Participant status for debugging
+   */
+  getChatParticipantStatus() {
+    return this.chatParticipant.getParticipantStatus();
+  }
+
+  /**
    * Send processed content to Copilot Chat
    */
   async sendToCopilot(request: ChatRequest): Promise<ChatResponse> {
+    this.context.logger.info(`Sending content to Copilot: ${request.goal}`);
+
     try {
       // Process inputs if not already processed
       if (!request.processedContents || request.processedContents.length === 0) {
         request.processedContents = await this.processInputs(request.inputs);
       }
+
+      // First try to use the Chat Participant service if available
+      if (this.chatParticipant.isChatParticipantSupported()) {
+        this.context.logger.info('Using Chat Participant API');
+        return await this.chatParticipant.sendToCopilotChat(request);
+      }
+
+      // Fallback to command-based approach
+      this.context.logger.info('Using command-based approach');
 
       // Combine all text content
       const combinedContent = this.combineContents(request.processedContents);
@@ -249,15 +273,22 @@ Please analyze the provided content and help achieve the stated goal.
    */
   private async checkCopilotAvailability(): Promise<boolean> {
     try {
-      // Check if GitHub Copilot extension is installed and active
-      const copilotExtension = vscode.extensions.getExtension('GitHub.copilot-chat');
+      // Check if GitHub Copilot Chat extension is installed and active
+      const copilotChatExtension = vscode.extensions.getExtension('GitHub.copilot-chat');
+      const copilotExtension = vscode.extensions.getExtension('GitHub.copilot');
       
-      if (!copilotExtension) {
-        this.context.logger.warn('GitHub Copilot Chat extension not found');
+      if (!copilotChatExtension && !copilotExtension) {
+        this.context.logger.warn('GitHub Copilot extensions not found');
         return false;
       }
 
-      if (!copilotExtension.isActive) {
+      // Activate Copilot Chat if available
+      if (copilotChatExtension && !copilotChatExtension.isActive) {
+        await copilotChatExtension.activate();
+      }
+
+      // Activate base Copilot if available
+      if (copilotExtension && !copilotExtension.isActive) {
         await copilotExtension.activate();
       }
 
@@ -269,29 +300,35 @@ Please analyze the provided content and help achieve the stated goal.
   }
 
   /**
-   * Invoke Copilot Chat
+   * Invoke Copilot Chat using current stable API
    */
   private async invokeCopilotChat(message: string): Promise<string> {
     try {
-      // Try to use VS Code's chat API if available
-      const chatAPI = (vscode as any).chat;
+      this.context.logger.info('Sending message to Copilot Chat...');
       
-      if (chatAPI && chatAPI.sendMessage) {
-        const response = await chatAPI.sendMessage({
-          message,
-          participant: 'copilot',
-        });
-        return response.text || 'No response from Copilot';
-      }
-
-      // Alternative: Open Copilot chat with pre-filled message
+      // Use the current stable method: open chat with prompt
+      // This opens the Copilot Chat panel and sends the message
       await vscode.commands.executeCommand('workbench.action.chat.open', {
-        message,
+        query: message
       });
 
-      return 'Message sent to Copilot Chat. Please check the chat panel for the response.';
+      // For now, we return a confirmation message since we can't directly get the response
+      // In a real implementation, you might want to use Chat Participants for interactive responses
+      return `Message sent to Copilot Chat: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`;
+      
     } catch (error) {
-      throw new Error(`Failed to invoke Copilot: ${error instanceof Error ? error.message : String(error)}`);
+      this.context.logger.error('Failed to invoke Copilot Chat', error);
+      
+      // Fallback: try alternative command formats
+      try {
+        await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
+        await vscode.commands.executeCommand('workbench.action.chat.clear');
+        await vscode.commands.executeCommand('workbench.action.chat.insertText', message);
+        
+        return `Copilot Chat opened with message: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`;
+      } catch (fallbackError) {
+        throw new Error(`Failed to invoke Copilot Chat: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 

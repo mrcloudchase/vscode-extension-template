@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "publisher": "your-publisher-name",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
@@ -50,7 +50,11 @@
         "vscode-webview-extension.theme": {
           "type": "string",
           "default": "auto",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "description": "Color theme for the webview"
         },
         "vscode-webview-extension.githubToken": {
@@ -61,6 +65,15 @@
         }
       }
     },
+    "chatParticipants": [
+      {
+        "id": "content-creator",
+        "fullName": "Content Creator",
+        "name": "content-creator",
+        "description": "Create professional technical documentation with AI assistance",
+        "isSticky": true
+      }
+    ],
     "menus": {
       "view/title": [
         {
@@ -72,14 +85,14 @@
     }
   },
   "dependencies": {
-    "axios": "^1.7.7",
-    "pdf-parse": "^1.1.1",
-    "mammoth": "^1.8.0",
     "@octokit/rest": "^21.0.2",
-    "cheerio": "^1.0.0",
-    "iconv-lite": "^0.6.3",
-    "file-type": "^19.6.0",
     "adm-zip": "^0.5.16",
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "file-type": "^19.6.0",
+    "iconv-lite": "^0.6.3",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1",
     "xml2js": "^0.6.2"
   },
   "scripts": {
@@ -95,9 +108,9 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
     "@types/mocha": "^10.0.8",
     "@types/node": "^20.11.0",
+    "@types/vscode": "^1.102.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "@vscode/test-cli": "^0.0.10",
