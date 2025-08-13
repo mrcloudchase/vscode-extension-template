@@ -12,7 +12,6 @@ dist/
 
 # VS Code directories
 .vscode-test/
-.vscode/
 
 # OS files
 .DS_Store
