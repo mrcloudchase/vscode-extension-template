@@ -24,6 +24,8 @@ export enum MessageType {
   COPILOT_RESPONSE = 'copilotResponse',
   WORKFLOW_STEP_COMPLETE = 'workflowStepComplete',
   WORKFLOW_RESULT = 'workflowResult',
+  CONTENT_CREATION_PROGRESS = 'contentCreationProgress',
+  CONTENT_CREATION_RESULT = 'contentCreationResult',
   
   // From webview to extension
   REQUEST_DATA = 'requestData',
@@ -35,6 +37,7 @@ export enum MessageType {
   SELECT_FILES = 'selectFiles',
   EXECUTE_WORKFLOW = 'executeWorkflow',
   GET_WORKFLOWS = 'getWorkflows',
+  CREATE_CONTENT = 'createContent',
 }
 
 /**

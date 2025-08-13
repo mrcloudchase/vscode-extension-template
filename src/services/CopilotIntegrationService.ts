@@ -8,6 +8,11 @@ import {
 } from '../models/InputModels';
 import { InputHandlerService } from './InputHandlerService';
 import { WorkflowOrchestratorService, WorkflowResult } from './WorkflowOrchestratorService';
+import { RepositoryContextService, RepositoryStructure } from './RepositoryContextService';
+import { DirectorySelectionService, DirectorySelection } from './DirectorySelectionService';
+import { ContentCreationService, ContentCreationRequest, ContentCreationResult } from './ContentCreationService';
+import { ContentPatternService } from './ContentPatternService';
+import { ContentPattern } from '../models/ContentPattern';
 
 /**
  * Main service for integrating with Copilot Chat
@@ -15,11 +20,19 @@ import { WorkflowOrchestratorService, WorkflowResult } from './WorkflowOrchestra
 export default class CopilotIntegrationService {
   private inputHandler: InputHandlerService;
   private workflowOrchestrator: WorkflowOrchestratorService;
+  private repositoryContext: RepositoryContextService;
+  private directorySelector: DirectorySelectionService;
+  private contentCreator: ContentCreationService;
+  private patternService: ContentPatternService;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
     this.inputHandler = new InputHandlerService(context);
     this.workflowOrchestrator = new WorkflowOrchestratorService(context, this);
+    this.repositoryContext = new RepositoryContextService(context);
+    this.directorySelector = new DirectorySelectionService(context);
+    this.contentCreator = new ContentCreationService(context);
+    this.patternService = new ContentPatternService(context);
   }
 
   /**
@@ -50,6 +63,96 @@ export default class CopilotIntegrationService {
       processedContents,
       onStepComplete
     );
+  }
+
+  /**
+   * Create new content using repository-aware workflow
+   */
+  async createNewContent(
+    contentRequest: string,
+    inputs: InputFile[],
+    options?: {
+      audience?: string;
+      contentType?: string;
+      selectedPatternId?: string;
+      onProgress?: (step: string, message: string) => void;
+    }
+  ): Promise<ContentCreationResult> {
+    const progress = options?.onProgress;
+    
+    try {
+      // Step 1: Process inputs
+      progress?.('processing', 'Processing input materials...');
+      const processedInputs = await this.processInputs(inputs);
+      
+      // Step 2: Analyze repository structure
+      progress?.('analyzing', 'Analyzing repository structure...');
+      const repositoryStructure = await this.repositoryContext.getRepositoryStructure();
+      
+      // Step 3: Select optimal directory
+      progress?.('selecting', 'Selecting optimal directory placement...');
+      const directorySelection = await this.directorySelector.selectOptimalDirectory(
+        contentRequest,
+        processedInputs,
+        repositoryStructure,
+        this
+      );
+      
+      // Step 4: Get selected pattern (if specified)
+      let selectedPattern: ContentPattern | undefined;
+      if (options?.selectedPatternId) {
+        selectedPattern = this.patternService.getPatternById(options.selectedPatternId);
+        if (selectedPattern) {
+          progress?.('pattern', `Using pattern: ${selectedPattern.name}`);
+        }
+      }
+
+      // Step 5: Create content
+      progress?.('generating', 'Generating new content...');
+      const creationRequest: ContentCreationRequest = {
+        goal: contentRequest,
+        processedInputs,
+        directorySelection,
+        repositoryStructure,
+        contentType: options?.contentType,
+        audience: options?.audience,
+        selectedPattern
+      };
+      
+      const result = await this.contentCreator.createContent(creationRequest, this);
+      
+      // Step 6: Open created file
+      if (result.success && result.filePath) {
+        progress?.('opening', 'Opening created file...');
+        await this.contentCreator.openCreatedFile(result.filePath);
+      }
+      
+      progress?.('complete', 'Content creation completed successfully!');
+      return result;
+      
+    } catch (error) {
+      this.context.logger.error('Content creation failed:', error);
+      progress?.('error', `Content creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Get available content patterns
+   */
+  getAvailableContentPatterns(): ContentPattern[] {
+    return this.patternService.getAvailablePatterns();
+  }
+
+  /**
+   * Get content pattern by ID
+   */
+  getContentPatternById(id: string): ContentPattern | undefined {
+    return this.patternService.getPatternById(id);
   }
 
   /**
