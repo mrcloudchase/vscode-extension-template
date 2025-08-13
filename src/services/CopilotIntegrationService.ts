@@ -14,6 +14,7 @@ import { ContentCreationService, ContentCreationRequest, ContentCreationResult }
 import { ContentPatternService } from './ContentPatternService';
 import { ContentPattern } from '../models/ContentPattern';
 import { ChatParticipantService } from './ChatParticipantService';
+import { CopilotOrchestrationService, CopilotWorkflowRequest, CopilotContentResult } from './CopilotOrchestrationService';
 
 /**
  * Main service for integrating with Copilot Chat
@@ -26,6 +27,7 @@ export default class CopilotIntegrationService {
   private contentCreator: ContentCreationService;
   private patternService: ContentPatternService;
   private chatParticipant: ChatParticipantService;
+  private copilotOrchestrator: CopilotOrchestrationService;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
@@ -36,6 +38,7 @@ export default class CopilotIntegrationService {
     this.contentCreator = new ContentCreationService(context);
     this.patternService = new ContentPatternService(context);
     this.chatParticipant = new ChatParticipantService(context);
+    this.copilotOrchestrator = new CopilotOrchestrationService(context);
     
     // Register chat participant if supported
     this.chatParticipant.registerChatParticipant();
@@ -83,65 +86,27 @@ export default class CopilotIntegrationService {
       selectedPatternId?: string;
       onProgress?: (step: string, message: string) => void;
     }
-  ): Promise<ContentCreationResult> {
-    const progress = options?.onProgress;
-    
+  ): Promise<CopilotContentResult> {
     try {
-      // Step 1: Process inputs
-      progress?.('processing', 'Processing input materials...');
-      const processedInputs = await this.processInputs(inputs);
-      
-      // Step 2: Analyze repository structure
-      progress?.('analyzing', 'Analyzing repository structure...');
-      const repositoryStructure = await this.repositoryContext.getRepositoryStructure();
-      
-      // Step 3: Select optimal directory
-      progress?.('selecting', 'Selecting optimal directory placement...');
-      const directorySelection = await this.directorySelector.selectOptimalDirectory(
-        contentRequest,
-        processedInputs,
-        repositoryStructure,
-        this
+      // Use the new Copilot-driven orchestration workflow
+      const workflowRequest: CopilotWorkflowRequest = {
+        goal: contentRequest,
+        inputs,
+        audience: options?.audience,
+        contentType: options?.contentType
+      };
+
+      return await this.copilotOrchestrator.executeWorkflow(
+        workflowRequest,
+        options?.onProgress
       );
       
-      // Step 4: Get selected pattern (if specified)
-      let selectedPattern: ContentPattern | undefined;
-      if (options?.selectedPatternId) {
-        selectedPattern = this.patternService.getPatternById(options.selectedPatternId);
-        if (selectedPattern) {
-          progress?.('pattern', `Using pattern: ${selectedPattern.name}`);
-        }
-      }
-
-      // Step 5: Create content
-      progress?.('generating', 'Generating new content...');
-      const creationRequest: ContentCreationRequest = {
-        goal: contentRequest,
-        processedInputs,
-        directorySelection,
-        repositoryStructure,
-        contentType: options?.contentType,
-        audience: options?.audience,
-        selectedPattern
-      };
-      
-      const result = await this.contentCreator.createContent(creationRequest, this);
-      
-      // Step 6: Open created file
-      if (result.success && result.filePath) {
-        progress?.('opening', 'Opening created file...');
-        await this.contentCreator.openCreatedFile(result.filePath);
-      }
-      
-      progress?.('complete', 'Content creation completed successfully!');
-      return result;
-      
     } catch (error) {
-      this.context.logger.error('Content creation failed:', error);
-      progress?.('error', `Content creation failed: ${error instanceof Error ? error.message : String(error)}`);
-      
+      this.context.logger.error('Failed to execute Copilot workflow:', error);
       return {
         success: false,
+        action: 'created',
+        pattern: 'unknown',
         error: error instanceof Error ? error.message : String(error)
       };
     }

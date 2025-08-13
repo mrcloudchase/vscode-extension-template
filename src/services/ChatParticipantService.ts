@@ -182,9 +182,8 @@ export class ChatParticipantService {
         message += `### ${index + 1}. ${content.source} (${content.type})\n`;
         message += `**Source**: ${content.source}\n\n`;
         
-        // Include a preview of the content (truncated)
-        const preview = content.text.substring(0, 500);
-        message += `**Content Preview**:\n\`\`\`\n${preview}${content.text.length > 500 ? '...' : ''}\n\`\`\`\n\n`;
+        // Include the full content
+        message += `**Content**:\n\`\`\`\n${content.text}\n\`\`\`\n\n`;
       });
     }
 
