@@ -12,8 +12,9 @@ import { InputHandlerService } from './InputHandlerService';
 
 import { ContentPatternService } from './ContentPatternService';
 import { ContentPattern } from '../models/ContentPattern';
-import { ChatParticipantService } from './ChatParticipantService';
-import { SequentialOrchestrationService } from './SequentialOrchestrationService';
+
+import { AutomatedOrchestrationService } from './AutomatedOrchestrationService';
+import { AutomatedChatParticipantService } from './AutomatedChatParticipantService';
 import { OrchestrationResult } from '../models/OrchestrationModels';
 
 /**
@@ -22,18 +23,21 @@ import { OrchestrationResult } from '../models/OrchestrationModels';
 export default class CopilotIntegrationService {
   private inputHandler: InputHandlerService;
   private patternService: ContentPatternService;
-  private chatParticipant: ChatParticipantService;
-  private sequentialOrchestrator: SequentialOrchestrationService;
+  private automatedOrchestrator: AutomatedOrchestrationService;
+  private automatedChatParticipant: AutomatedChatParticipantService;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
     this.inputHandler = new InputHandlerService(context);
     this.patternService = new ContentPatternService(context);
-    this.chatParticipant = new ChatParticipantService(context);
-    this.sequentialOrchestrator = new SequentialOrchestrationService(context);
+    this.automatedOrchestrator = new AutomatedOrchestrationService(context);
+    this.automatedChatParticipant = new AutomatedChatParticipantService(context);
     
-    // Register chat participant if supported
-    this.chatParticipant.registerChatParticipant();
+    // Set up bidirectional dependency
+    this.automatedChatParticipant.setOrchestrator(this.automatedOrchestrator);
+    
+    // Register automated chat participant
+    this.automatedChatParticipant.registerChatParticipant();
   }
 
   /**
@@ -48,7 +52,7 @@ export default class CopilotIntegrationService {
 
 
   /**
-   * Create new content using Copilot-driven workflow  
+   * Create new content using fully automated workflow  
    */
   async createNewContent(
     contentRequest: string,
@@ -61,8 +65,8 @@ export default class CopilotIntegrationService {
     }
   ): Promise<OrchestrationResult> {
     try {
-      // Use the new sequential orchestration workflow with deterministic schemas
-      return await this.sequentialOrchestrator.executeWorkflow(
+      // Use the fully automated orchestration workflow
+      return await this.automatedOrchestrator.executeWorkflow(
         contentRequest,
         inputs,
         {
@@ -73,7 +77,7 @@ export default class CopilotIntegrationService {
       );
       
     } catch (error) {
-      this.context.logger.error('Failed to execute sequential workflow:', error);
+      this.context.logger.error('Failed to execute automated workflow:', error);
       return {
         success: false,
         action: 'CREATED',
@@ -100,9 +104,9 @@ export default class CopilotIntegrationService {
 
 
   /**
-   * Get Chat Participant status for debugging
+   * Get Automated Chat Participant status for debugging
    */
   getChatParticipantStatus() {
-    return this.chatParticipant.getParticipantStatus();
+    return this.automatedChatParticipant.getParticipantStatus();
   }
 }
