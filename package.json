@@ -92,6 +92,7 @@
     "file-type": "^19.6.0",
     "iconv-lite": "^0.6.3",
     "mammoth": "^1.8.0",
+    "nanoid": "^5.1.5",
     "pdf-parse": "^1.1.1",
     "xml2js": "^0.6.2"
   },

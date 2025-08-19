@@ -6,6 +6,7 @@ export { InputHandlerService } from './InputHandlerService';
 export { PromptService } from './PromptService';
 export { ContentPatternService } from './ContentPatternService';
 export { ChatParticipantService } from './ChatParticipantService';
+export { WorkflowContextManager } from './WorkflowContextManager';
 export { WordDocumentService } from './WordDocumentService';
 export { PDFService } from './PDFService';
 export { PowerPointService } from './PowerPointService';

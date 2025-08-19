@@ -6,8 +6,8 @@ You're senior technical documentation specialist analyzing a repository to selec
 ## Content Request
 {{content_request}}
 
-## Repository Analysis
-{{repository_analysis}}
+## Repository Structure
+{{repositoryStructure}}
 
 ## Task
 Analyze the workspace structure and content request to select the optimal working directory for documentation work.

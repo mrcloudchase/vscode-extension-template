@@ -3,6 +3,7 @@ import { ExtensionContext } from '../types/ExtensionContext';
 import { PromptService } from './PromptService';
 import { InputHandlerService } from './InputHandlerService';
 import { ContentPatternService } from './ContentPatternService';
+import { WorkflowContextManager, WorkflowContext } from './WorkflowContextManager';
 import { 
   DirectorySelectionSchema, 
   ContentStrategySchema, 
@@ -20,6 +21,15 @@ interface RepositoryStructure {
   configFiles: string[];
   markdownFiles: string[];
   totalFiles: number;
+  projectType: string;
+  recentlyModified: string[];
+  documentationPatterns: {
+    namingConventions: string[];
+    commonDirectories: string[];
+    frontMatterUsage: boolean;
+  };
+  workspaceName: string;
+  hasGitRepository: boolean;
 }
 
 interface DirectoryNode {
@@ -40,7 +50,10 @@ export class ChatParticipantService {
   private inputHandler: InputHandlerService;
   private patternService: ContentPatternService;
 
-  constructor(private context: ExtensionContext) {
+  constructor(
+    private context: ExtensionContext,
+    private contextManager: WorkflowContextManager
+  ) {
     this.promptService = new PromptService(context);
     this.inputHandler = new InputHandlerService(context);
     this.patternService = new ContentPatternService(context);
@@ -92,35 +105,27 @@ export class ChatParticipantService {
         return {};
       }
 
-      // Start the sequential workflow
-      stream.markdown('🤖 **Starting Content Creation Workflow**\n\n');
+      // Check if this is a context-based request
+      const contextInfo = this.contextManager.parseContextFromPrompt(userPrompt);
       
-      const result = await this.executeSequentialWorkflow(
-        userPrompt,
-        request,
-        stream,
-        token
-      );
-
-      if (result.success) {
-        stream.markdown(`\n✅ **Workflow Complete!**\n`);
-        stream.markdown(`📄 Created: \`${result.filePath}\`\n\n`);
-        
-        stream.button({
-          command: 'vscode.open',
-          arguments: [vscode.Uri.file(result.filePath!)],
-          title: 'Open Created File'
-        });
-        
-        stream.button({
-          command: 'vscode-webview-extension.openWebview',
-          title: 'Create More Content'
-        });
+      if (contextInfo) {
+        // Context-based workflow (from webview)
+        return await this.handleContextBasedRequest(
+          contextInfo.contextId,
+          contextInfo.remainingPrompt,
+          request,
+          stream,
+          token
+        );
       } else {
-        stream.markdown(`\n❌ **Workflow Failed:** ${result.error}\n`);
+        // Direct chat request (user typed directly in chat)
+        return await this.handleDirectChatRequest(
+          userPrompt,
+          request,
+          stream,
+          token
+        );
       }
-
-      return {};
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -131,10 +136,118 @@ export class ChatParticipantService {
   }
 
   /**
+   * Handle context-based request (from webview handoff)
+   */
+  private async handleContextBasedRequest(
+    contextId: string,
+    remainingPrompt: string,
+    request: vscode.ChatRequest,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    
+    // Retrieve context
+    const workflowContext = this.contextManager.retrieveContext(contextId);
+    if (!workflowContext) {
+      stream.markdown(`❌ **Context Not Found**\n\nContext ID \`${contextId}\` has expired or doesn't exist. Please submit your request again from the webview.`);
+      return {};
+    }
+
+    // Display context information
+    stream.markdown(`🔗 **Context Retrieved**\n`);
+    stream.markdown(`📝 **Goal:** ${workflowContext.goal}\n`);
+    stream.markdown(`📄 **Files:** ${workflowContext.processedFiles.length} processed\n`);
+    if (workflowContext.options.audience) {
+      stream.markdown(`👥 **Audience:** ${workflowContext.options.audience}\n`);
+    }
+    if (workflowContext.options.contentType) {
+      stream.markdown(`📋 **Type:** ${workflowContext.options.contentType}\n`);
+    }
+    stream.markdown('\n---\n\n');
+
+    // Start the workflow with context
+    stream.markdown('🤖 **Starting Enhanced Content Creation Workflow**\n\n');
+    
+    const result = await this.executeSequentialWorkflow(
+      workflowContext.goal,
+      workflowContext,
+      request,
+      stream,
+      token
+    );
+
+    // Clean up context after successful processing
+    if (result.success) {
+      this.contextManager.removeContext(contextId);
+      
+      stream.markdown(`\n✅ **Workflow Complete!**\n`);
+      stream.markdown(`📄 Created: \`${result.filePath}\`\n\n`);
+      
+      stream.button({
+        command: 'vscode.open',
+        arguments: [vscode.Uri.file(result.filePath!)],
+        title: 'Open Created File'
+      });
+      
+      stream.button({
+        command: 'vscode-webview-extension.openWebview',
+        title: 'Create More Content'
+      });
+    } else {
+      stream.markdown(`\n❌ **Workflow Failed:** ${result.error}\n`);
+    }
+
+    return {};
+  }
+
+  /**
+   * Handle direct chat request (user typed directly)
+   */
+  private async handleDirectChatRequest(
+    userPrompt: string,
+    request: vscode.ChatRequest,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    
+    stream.markdown('🤖 **Starting Content Creation Workflow**\n\n');
+    stream.markdown('💡 *For best results with file inputs, use the webview interface first.*\n\n');
+    
+    const result = await this.executeSequentialWorkflow(
+      userPrompt,
+      null, // No context from webview
+      request,
+      stream,
+      token
+    );
+
+    if (result.success) {
+      stream.markdown(`\n✅ **Workflow Complete!**\n`);
+      stream.markdown(`📄 Created: \`${result.filePath}\`\n\n`);
+      
+      stream.button({
+        command: 'vscode.open',
+        arguments: [vscode.Uri.file(result.filePath!)],
+        title: 'Open Created File'
+      });
+      
+      stream.button({
+        command: 'vscode-webview-extension.openWebview',
+        title: 'Upload Files & Create More'
+      });
+    } else {
+      stream.markdown(`\n❌ **Workflow Failed:** ${result.error}\n`);
+    }
+
+    return {};
+  }
+
+  /**
    * Execute the sequential workflow using Language Model API
    */
   private async executeSequentialWorkflow(
     contentRequest: string,
+    workflowContext: WorkflowContext | null,
     request: vscode.ChatRequest,
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
@@ -238,7 +351,7 @@ export class ChatParticipantService {
     
     const prompt = this.promptService.renderPrompt('orchestration/01-directory-selection', {
       repositoryStructure: JSON.stringify(repoStructure, null, 2),
-      contentRequest: contentRequest,
+      content_request: contentRequest,
       workspaceName: path.basename(repoStructure.rootPath)
     });
 
@@ -452,7 +565,7 @@ export class ChatParticipantService {
   }
 
   /**
-   * Helper: Get repository structure
+   * Helper: Get enhanced repository structure using VS Code APIs
    */
   private async getRepositoryStructure(): Promise<RepositoryStructure> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -461,18 +574,61 @@ export class ChatParticipantService {
     }
 
     const rootPath = workspaceFolders[0].uri.fsPath;
-    const structure = await this.buildDirectoryTree(rootPath);
+    const workspaceUri = workspaceFolders[0].uri;
+
+    this.context.logger.info('Analyzing repository structure using VS Code APIs...');
+
+    // Use VS Code APIs for comprehensive file discovery
+    const [
+      allMarkdownFiles,
+      allConfigFiles,
+      packageJsonFiles,
+      readmeFiles,
+      changelogFiles
+    ] = await Promise.all([
+      vscode.workspace.findFiles('**/*.{md,mdx}', '**/node_modules/**'),
+      vscode.workspace.findFiles('**/*.{json,yaml,yml,toml,ini,conf,config}', '**/node_modules/**'),
+      vscode.workspace.findFiles('**/package.json', '**/node_modules/**'),
+      vscode.workspace.findFiles('**/README*', '**/node_modules/**'),
+      vscode.workspace.findFiles('**/{CHANGELOG,CHANGES,HISTORY}*', '**/node_modules/**')
+    ]);
+
+    // Build directory structure with better depth and filtering
+    const structure = await this.buildDirectoryTree(rootPath, 4); // Increased depth
+    
+    // Enhanced documentation directory discovery
     const documentationDirectories = this.findDocumentationDirectories(structure);
-    const configFiles = this.findConfigFiles(structure);
-    const markdownFiles = this.findMarkdownFiles(structure);
+    
+    // Add VS Code discovered file paths
+    const markdownFiles = allMarkdownFiles.map(uri => 
+      path.relative(rootPath, uri.fsPath)
+    );
+    
+    const configFiles = allConfigFiles.map(uri => 
+      path.relative(rootPath, uri.fsPath)
+    );
+
+    // Detect project type and conventions
+    const projectType = this.detectProjectType(packageJsonFiles, configFiles);
+    
+    // Get recently modified files (Git integration if available)
+    const recentlyModified = await this.getRecentlyModifiedFiles(workspaceUri);
+
+    // Analyze existing documentation patterns
+    const docPatterns = await this.analyzeDocumentationPatterns(allMarkdownFiles);
 
     return {
       rootPath,
       structure,
-      documentationDirectories,
+      documentationDirectories: [...new Set(documentationDirectories)], // Remove duplicates
       configFiles,
       markdownFiles,
-      totalFiles: this.countFiles(structure)
+      totalFiles: this.countFiles(structure),
+      projectType,
+      recentlyModified,
+      documentationPatterns: docPatterns,
+      workspaceName: workspaceFolders[0].name,
+      hasGitRepository: await this.checkGitRepository(workspaceUri)
     };
   }
 
@@ -666,6 +822,126 @@ export class ChatParticipantService {
       title: 'Open Full Interface',
       tooltip: 'Open the complete Content Creator interface for file uploads and detailed requests'
     });
+  }
+
+  /**
+   * Detect project type based on config files
+   */
+  private detectProjectType(packageJsonFiles: vscode.Uri[], configFiles: string[]): string {
+    if (packageJsonFiles.length > 0) {
+      return 'Node.js/JavaScript';
+    }
+    
+    const configNames = configFiles.map(f => path.basename(f).toLowerCase());
+    
+    if (configNames.some(name => name.includes('cargo.toml'))) {
+      return 'Rust';
+    }
+    if (configNames.some(name => name.includes('requirements.txt') || name.includes('pyproject.toml'))) {
+      return 'Python';
+    }
+    if (configNames.some(name => name.includes('pom.xml') || name.includes('build.gradle'))) {
+      return 'Java';
+    }
+    if (configNames.some(name => name.includes('go.mod'))) {
+      return 'Go';
+    }
+    
+    return 'General';
+  }
+
+  /**
+   * Get recently modified files using Git API if available
+   */
+  private async getRecentlyModifiedFiles(workspaceUri: vscode.Uri): Promise<string[]> {
+    try {
+      const gitExtension = vscode.extensions.getExtension('vscode.git');
+      if (!gitExtension?.isActive) {
+        return [];
+      }
+
+      // Try to get git API (this is a simplified approach)
+      // In a real implementation, you'd use the Git extension API
+      const recentFiles: string[] = [];
+      
+      // Fallback: get recently opened/modified files from VS Code
+      const recentlyOpened = vscode.workspace.textDocuments
+        .filter(doc => doc.uri.scheme === 'file')
+        .filter(doc => doc.uri.fsPath.startsWith(workspaceUri.fsPath))
+        .map(doc => path.relative(workspaceUri.fsPath, doc.uri.fsPath))
+        .slice(0, 10);
+      
+      return recentlyOpened;
+    } catch (error) {
+      this.context.logger.debug('Could not get recently modified files:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Analyze existing documentation patterns
+   */
+  private async analyzeDocumentationPatterns(markdownFiles: vscode.Uri[]): Promise<{
+    namingConventions: string[];
+    commonDirectories: string[];
+    frontMatterUsage: boolean;
+  }> {
+    const conventions = new Set<string>();
+    const directories = new Set<string>();
+    let frontMatterCount = 0;
+
+    for (const file of markdownFiles.slice(0, 20)) { // Sample first 20 files
+      try {
+        const relativePath = vscode.workspace.asRelativePath(file);
+        const dirName = path.dirname(relativePath);
+        
+        if (dirName !== '.') {
+          directories.add(dirName);
+        }
+
+        const fileName = path.basename(file.fsPath, '.md');
+        
+        // Detect naming conventions
+        if (fileName.includes('-')) {
+          conventions.add('kebab-case');
+        }
+        if (fileName.includes('_')) {
+          conventions.add('snake_case');
+        }
+        if (/[A-Z]/.test(fileName)) {
+          conventions.add('camelCase/PascalCase');
+        }
+
+        // Check for front matter (YAML)
+        const content = await vscode.workspace.fs.readFile(file);
+        const text = Buffer.from(content).toString('utf8');
+        if (text.startsWith('---\n')) {
+          frontMatterCount++;
+        }
+      } catch (error) {
+        // Skip files that can't be read
+        continue;
+      }
+    }
+
+    return {
+      namingConventions: Array.from(conventions),
+      commonDirectories: Array.from(directories).slice(0, 10),
+      frontMatterUsage: frontMatterCount > markdownFiles.length * 0.3 // 30% threshold
+    };
+  }
+
+  /**
+   * Check if workspace has a Git repository
+   */
+  private async checkGitRepository(workspaceUri: vscode.Uri): Promise<boolean> {
+    try {
+      const gitDir = vscode.Uri.joinPath(workspaceUri, '.git');
+      const stat = await vscode.workspace.fs.stat(gitDir);
+      return stat.type === vscode.FileType.Directory;
+    } catch {
+      return false;
+    }
   }
 
   /**

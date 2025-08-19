@@ -4,6 +4,7 @@ import { ChatParticipantService } from './ChatParticipantService';
 import { InputFile, ProcessedContent } from '../models/InputModels';
 import { OrchestrationResult } from '../models/OrchestrationModels';
 import { InputHandlerService } from './InputHandlerService';
+import { WorkflowContextManager } from './WorkflowContextManager';
 
 /**
  * Main service for integrating with VS Code Chat Participant API
@@ -12,10 +13,12 @@ import { InputHandlerService } from './InputHandlerService';
 export default class CopilotIntegrationService {
   private chatParticipant: ChatParticipantService;
   private inputHandler: InputHandlerService;
+  private contextManager: WorkflowContextManager;
   private processedContents: ProcessedContent[] = [];
 
   constructor(private context: ExtensionContext) {
-    this.chatParticipant = new ChatParticipantService(context);
+    this.contextManager = new WorkflowContextManager(context);
+    this.chatParticipant = new ChatParticipantService(context, this.contextManager);
     this.inputHandler = new InputHandlerService(context);
     
     // Register the chat participant on initialization
@@ -45,29 +48,21 @@ export default class CopilotIntegrationService {
         this.context.logger.info(`Processed ${this.processedContents.length} input files`);
       }
 
-      // For webview requests, we need to open the chat and guide the user to use the chat participant
-      // The actual workflow will be handled by the ChatParticipantService when user interacts with @content-creator
+      options?.onProgress?.('Preparing', 'Storing workflow context...');
 
-      // Prepare the enhanced content request with processed inputs
-      let enhancedRequest = contentRequest;
-      
-      if (this.processedContents.length > 0) {
-        enhancedRequest += '\n\n**Input Materials:**\n';
-        for (const content of this.processedContents) {
-          enhancedRequest += `- ${content.source}: ${content.text.substring(0, 200)}...\n`;
+      // Store context for handoff to chat participant
+      const contextId = this.contextManager.storeContext(
+        contentRequest,
+        this.processedContents,
+        inputs,
+        {
+          audience: options?.audience,
+          contentType: options?.contentType
         }
-      }
+      );
 
-      if (options?.audience) {
-        enhancedRequest += `\n**Target Audience:** ${options.audience}`;
-      }
-      
-      if (options?.contentType) {
-        enhancedRequest += `\n**Content Type:** ${options.contentType}`;
-      }
-
-      // Open chat with the enhanced request
-      const chatQuery = `@content-creator ${enhancedRequest}`;
+      // Generate chat query with context ID
+      const chatQuery = this.contextManager.generateChatQuery(contextId);
       
       options?.onProgress?.('Launching', 'Opening chat participant...');
       
@@ -80,7 +75,7 @@ export default class CopilotIntegrationService {
         success: true,
         action: 'INITIATED',
         steps: {},
-        message: 'Chat participant workflow initiated. The sequential content creation process will continue in the chat interface.'
+        message: `Chat participant launched with context ${contextId}. The workflow will continue in the chat interface with full access to your files and VS Code workspace.`
       };
 
     } catch (error) {
