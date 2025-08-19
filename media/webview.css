@@ -414,6 +414,145 @@ h3 {
   animation: spin 1s linear infinite;
 }
 
+/* Copilot Monitor Section */
+.monitor-section {
+  background: var(--vscode-terminal-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--vscode-titleBar-activeBackground, var(--vscode-editor-background));
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.monitor-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 16px;
+  color: var(--vscode-foreground);
+}
+
+.monitor-controls {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.monitor-control-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.monitor-control-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.monitor-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--vscode-panel-border);
+  max-height: 400px;
+  transition: max-height 0.3s ease;
+}
+
+.monitor-content.collapsed {
+  max-height: 0;
+  overflow: hidden;
+}
+
+.io-window {
+  background: var(--vscode-editor-background);
+  display: flex;
+  flex-direction: column;
+}
+
+.io-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.io-header .copy-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.io-header .copy-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.io-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  font-family: var(--vscode-editor-font-family, 'Menlo', 'Monaco', 'Courier New', monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  min-height: 150px;
+  max-height: 300px;
+}
+
+.io-placeholder {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.io-content .prompt-block {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--vscode-textBlockQuote-background);
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  border-radius: var(--radius-sm);
+}
+
+.io-content .response-block {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--vscode-textBlockQuote-background);
+  border-left: 3px solid var(--vscode-terminal-ansiGreen);
+  border-radius: var(--radius-sm);
+}
+
+.io-content .timestamp {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  margin-bottom: var(--spacing-xs);
+}
+
 /* Response Section */
 .response-content {
   font-size: 14px;

@@ -36,6 +36,23 @@ export class InputProcessor {
         },
       });
 
+      // Set up callback for real-time Copilot I/O monitoring
+      if (this.copilotService.setUpdateCallback) {
+        this.copilotService.setUpdateCallback((type: string, data: any) => {
+          if (type === 'copilotInput') {
+            this.sendMessage({
+              type: MessageType.COPILOT_INPUT,
+              payload: data,
+            });
+          } else if (type === 'copilotOutput') {
+            this.sendMessage({
+              type: MessageType.COPILOT_OUTPUT,
+              payload: data,
+            });
+          }
+        });
+      }
+
       // Execute workflow through chat participant
       const result = await this.copilotService.executeWorkflow(options, {
         onProgress: (step: string, message: string) => {

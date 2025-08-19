@@ -22,6 +22,8 @@
         SHOW_MESSAGE: 'showMessage',
         WORKFLOW_STATUS: 'workflowStatus',
         WORKFLOW_COMPLETE: 'workflowComplete',
+        COPILOT_INPUT: 'copilotInput',
+        COPILOT_OUTPUT: 'copilotOutput',
         
         // From webview to extension
         LOG_MESSAGE: 'logMessage',
@@ -130,6 +132,26 @@
             });
         }
 
+        // Monitor controls
+        const toggleMonitorBtn = document.getElementById('toggle-monitor');
+        const clearMonitorBtn = document.getElementById('clear-monitor');
+        const copyBtns = document.querySelectorAll('.copy-btn');
+        
+        if (toggleMonitorBtn) {
+            toggleMonitorBtn.addEventListener('click', toggleMonitor);
+        }
+        
+        if (clearMonitorBtn) {
+            clearMonitorBtn.addEventListener('click', clearMonitor);
+        }
+        
+        copyBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = e.currentTarget.getAttribute('data-target');
+                copyToClipboard(targetId);
+            });
+        });
+
         // Listen for messages from the extension
         window.addEventListener('message', handleMessage);
     }
@@ -165,6 +187,14 @@
             
             case MessageType.UPDATE_CONTENT:
                 handleUpdateContent(message.payload);
+                break;
+            
+            case MessageType.COPILOT_INPUT:
+                handleCopilotInput(message.payload);
+                break;
+            
+            case MessageType.COPILOT_OUTPUT:
+                handleCopilotOutput(message.payload);
                 break;
             
             default:
@@ -523,6 +553,7 @@
         const statusEl = document.getElementById('workflow-status');
         const statusText = document.getElementById('status-text');
         const currentStep = document.getElementById('current-step');
+        const monitorSection = document.getElementById('copilot-monitor');
         
         if (statusEl && statusText) {
             statusEl.classList.remove('hidden');
@@ -534,8 +565,160 @@
             }
         }
         
+        // Show monitor section when workflow starts
+        if (monitorSection) {
+            monitorSection.classList.remove('hidden');
+        }
+        
         // Log the status
         log('info', `Workflow status: ${payload.message}`);
+    }
+
+    /**
+     * Handle Copilot input display
+     */
+    function handleCopilotInput(payload) {
+        const inputEl = document.getElementById('copilot-input');
+        if (inputEl) {
+            // Remove placeholder if present
+            const placeholder = inputEl.querySelector('.io-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
+            // Add timestamp and content
+            const timestamp = new Date().toLocaleTimeString();
+            const block = document.createElement('div');
+            block.className = 'prompt-block';
+            block.innerHTML = `
+                <div class="timestamp">[${timestamp}] Step ${payload.step || ''}:</div>
+                <div>${escapeHtml(payload.content)}</div>
+            `;
+            inputEl.appendChild(block);
+            
+            // Auto-scroll to bottom
+            inputEl.scrollTop = inputEl.scrollHeight;
+        }
+    }
+
+    /**
+     * Handle Copilot output display
+     */
+    function handleCopilotOutput(payload) {
+        const outputEl = document.getElementById('copilot-output');
+        if (outputEl) {
+            // Remove placeholder if present
+            const placeholder = outputEl.querySelector('.io-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
+            // Check if we're streaming to an existing block
+            let block = outputEl.querySelector('.response-block.streaming');
+            
+            if (payload.streaming) {
+                if (!block) {
+                    // Create new streaming block
+                    const timestamp = new Date().toLocaleTimeString();
+                    block = document.createElement('div');
+                    block.className = 'response-block streaming';
+                    block.innerHTML = `
+                        <div class="timestamp">[${timestamp}] Response:</div>
+                        <div class="content"></div>
+                    `;
+                    outputEl.appendChild(block);
+                }
+                
+                // Append to existing content
+                const contentEl = block.querySelector('.content');
+                if (contentEl) {
+                    contentEl.textContent += payload.content;
+                }
+            } else {
+                // Complete the streaming block
+                if (block) {
+                    block.classList.remove('streaming');
+                } else {
+                    // Non-streaming response
+                    const timestamp = new Date().toLocaleTimeString();
+                    block = document.createElement('div');
+                    block.className = 'response-block';
+                    block.innerHTML = `
+                        <div class="timestamp">[${timestamp}] Response:</div>
+                        <div class="content">${escapeHtml(payload.content)}</div>
+                    `;
+                    outputEl.appendChild(block);
+                }
+            }
+            
+            // Auto-scroll to bottom
+            outputEl.scrollTop = outputEl.scrollHeight;
+        }
+    }
+
+    /**
+     * Toggle monitor collapse/expand
+     */
+    function toggleMonitor() {
+        const content = document.getElementById('monitor-content');
+        const toggleBtn = document.getElementById('toggle-monitor');
+        
+        if (content && toggleBtn) {
+            content.classList.toggle('collapsed');
+            const icon = toggleBtn.querySelector('.codicon');
+            if (icon) {
+                if (content.classList.contains('collapsed')) {
+                    icon.classList.remove('codicon-chevron-down');
+                    icon.classList.add('codicon-chevron-right');
+                } else {
+                    icon.classList.remove('codicon-chevron-right');
+                    icon.classList.add('codicon-chevron-down');
+                }
+            }
+        }
+    }
+
+    /**
+     * Clear monitor content
+     */
+    function clearMonitor() {
+        const inputEl = document.getElementById('copilot-input');
+        const outputEl = document.getElementById('copilot-output');
+        
+        if (inputEl) {
+            inputEl.innerHTML = '<div class="io-placeholder">Waiting for input...</div>';
+        }
+        
+        if (outputEl) {
+            outputEl.innerHTML = '<div class="io-placeholder">Waiting for response...</div>';
+        }
+        
+        showLocalMessage('Monitor cleared', 'info');
+    }
+
+    /**
+     * Copy content to clipboard
+     */
+    function copyToClipboard(targetId) {
+        const element = document.getElementById(targetId);
+        if (element) {
+            const text = element.innerText || element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showLocalMessage('Copied to clipboard', 'success');
+            }).catch(err => {
+                showLocalMessage('Failed to copy', 'error');
+                console.error('Copy failed:', err);
+            });
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     /**

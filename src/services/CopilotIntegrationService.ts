@@ -8,10 +8,19 @@ import { ChatParticipantService } from './chat/ChatParticipantService';
  */
 export class CopilotIntegrationService {
   private chatParticipantService: ChatParticipantService;
+  private updateCallback?: (type: string, data: any) => void;
 
   constructor(private context: ExtensionContext) {
     this.chatParticipantService = new ChatParticipantService(context);
     this.chatParticipantService.registerChatParticipant();
+  }
+
+  /**
+   * Set callback for real-time updates
+   */
+  public setUpdateCallback(callback: (type: string, data: any) => void): void {
+    this.updateCallback = callback;
+    this.chatParticipantService.setUpdateCallback(callback);
   }
 
   /**

@@ -22,6 +22,8 @@ export enum MessageType {
   SHOW_MESSAGE = 'showMessage',
   WORKFLOW_STATUS = 'workflowStatus',
   WORKFLOW_COMPLETE = 'workflowComplete',
+  COPILOT_INPUT = 'copilotInput',
+  COPILOT_OUTPUT = 'copilotOutput',
 
   // From webview to extension
   LOG_MESSAGE = 'logMessage',

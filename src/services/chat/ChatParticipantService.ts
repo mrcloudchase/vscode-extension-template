@@ -19,6 +19,13 @@ export class ChatParticipantService {
   }
 
   /**
+   * Set callback for real-time updates
+   */
+  public setUpdateCallback(callback: (type: string, data: any) => void): void {
+    this.router.setUpdateCallback(callback);
+  }
+
+  /**
    * Register the chat participant
    */
   public registerChatParticipant(): void {

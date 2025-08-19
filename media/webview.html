@@ -133,6 +133,54 @@
                 </div>
             </section>
 
+            <!-- Copilot I/O Monitor Section -->
+            <section id="copilot-monitor" class="monitor-section hidden">
+                <div class="monitor-header">
+                    <h3>
+                        <span class="codicon codicon-terminal"></span>
+                        Copilot Communication Monitor
+                    </h3>
+                    <div class="monitor-controls">
+                        <button id="toggle-monitor" class="monitor-control-btn" title="Minimize/Maximize">
+                            <span class="codicon codicon-chevron-down"></span>
+                        </button>
+                        <button id="clear-monitor" class="monitor-control-btn" title="Clear">
+                            <span class="codicon codicon-clear-all"></span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="monitor-content" class="monitor-content">
+                    <!-- Input Window -->
+                    <div class="io-window">
+                        <div class="io-header">
+                            <span class="codicon codicon-arrow-right"></span>
+                            <span>Input to Copilot</span>
+                            <button class="copy-btn" data-target="copilot-input" title="Copy">
+                                <span class="codicon codicon-copy"></span>
+                            </button>
+                        </div>
+                        <div id="copilot-input" class="io-content">
+                            <div class="io-placeholder">Waiting for input...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Output Window -->
+                    <div class="io-window">
+                        <div class="io-header">
+                            <span class="codicon codicon-arrow-left"></span>
+                            <span>Output from Copilot</span>
+                            <button class="copy-btn" data-target="copilot-output" title="Copy">
+                                <span class="codicon codicon-copy"></span>
+                            </button>
+                        </div>
+                        <div id="copilot-output" class="io-content">
+                            <div class="io-placeholder">Waiting for response...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Response Section -->
             <section id="response-section" class="response-section hidden">
                 <h3>Result</h3>

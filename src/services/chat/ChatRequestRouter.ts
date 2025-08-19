@@ -10,10 +10,19 @@ import { PromptExecutor } from './PromptExecutor';
 export class ChatRequestRouter {
   private helpResponder: ChatHelpResponder;
   private promptExecutor: PromptExecutor;
+  private updateCallback?: (type: string, data: any) => void;
 
   constructor(private context: ExtensionContext) {
     this.helpResponder = new ChatHelpResponder();
     this.promptExecutor = new PromptExecutor(context);
+  }
+
+  /**
+   * Set callback for real-time updates to webview
+   */
+  public setUpdateCallback(callback: (type: string, data: any) => void): void {
+    this.updateCallback = callback;
+    this.promptExecutor.setUpdateCallback(callback);
   }
 
   /**

@@ -9,6 +9,7 @@ import { ExtensionContext, WorkflowOptions } from '../../types/ExtensionContext'
 export class PromptExecutor {
   private promptsPath: string;
   private prompts: Map<number, { name: string; content: string }> = new Map();
+  private updateCallback?: (type: string, data: any) => void;
 
   constructor(private context: ExtensionContext) {
     this.promptsPath = path.join(
@@ -18,6 +19,13 @@ export class PromptExecutor {
       'orchestration'
     );
     this.loadPrompts();
+  }
+
+  /**
+   * Set callback for real-time updates
+   */
+  public setUpdateCallback(callback: (type: string, data: any) => void): void {
+    this.updateCallback = callback;
   }
 
   /**
@@ -114,6 +122,14 @@ export class PromptExecutor {
       promptContent = promptContent.replace(/\{\{CONTENT_REQUEST\}\}/g, contentGoal);
       promptContent = promptContent.replace(/\{\{PREVIOUS_OUTPUT\}\}/g, previousOutput);
 
+      // Send prompt to monitor
+      if (this.updateCallback) {
+        this.updateCallback('copilotInput', {
+          step: order,
+          content: promptContent
+        });
+      }
+
       // In interactive mode, allow user to modify the prompt
       if (interactiveMode) {
         stream.markdown('**Current Prompt:**\n');
@@ -142,7 +158,8 @@ export class PromptExecutor {
           promptContent,
           request,
           stream,
-          token
+          token,
+          order
         );
 
         // Store result
@@ -214,7 +231,8 @@ export class PromptExecutor {
     prompt: string,
     request: vscode.ChatRequest,
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
+    step?: number
   ): Promise<string> {
     // Use Copilot's language model via the chat request
     const messages = [
@@ -236,6 +254,24 @@ export class PromptExecutor {
     for await (const fragment of chatResponse.text) {
       result += fragment;
       stream.markdown(fragment);
+      
+      // Send streaming output to monitor
+      if (this.updateCallback) {
+        this.updateCallback('copilotOutput', {
+          step,
+          content: fragment,
+          streaming: true
+        });
+      }
+    }
+
+    // Send final complete signal
+    if (this.updateCallback) {
+      this.updateCallback('copilotOutput', {
+        step,
+        content: '',
+        streaming: false
+      });
     }
 
     return result;
