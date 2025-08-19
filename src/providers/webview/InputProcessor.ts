@@ -22,8 +22,7 @@ export class InputProcessor {
       // Initialize CopilotIntegrationService if not already done (lazy loading)
       if (!this.copilotService) {
         this.context.logger.debug('Lazy loading CopilotIntegrationService...');
-        const CopilotIntegrationService = (await import('../../services/CopilotIntegrationService'))
-          .default;
+        const { CopilotIntegrationService } = await import('../../services/CopilotIntegrationService');
         this.copilotService = new CopilotIntegrationService(this.context);
         this.context.logger.debug('CopilotIntegrationService loaded successfully');
       }

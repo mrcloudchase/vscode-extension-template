@@ -6,15 +6,19 @@ You are a technical documentation specialist determining whether to create new c
 
 ## Content Request
 
-{{content_request}}
+{{contentRequest}}
 
-## Selected Directory
+## Selected Directory (from previous step)
 
-{{selected_directory}}
+{{selectedDirectory}}
 
-## Existing Content in Directory
+## Directory Purpose (from previous step)
 
-{{existing_content}}
+{{directoryPurpose}}
+
+## Existing Files in Directory
+
+{{existingFiles}}
 
 ## Task
 

@@ -4,7 +4,7 @@
 
 // Core orchestration services
 export { ChatParticipantService } from './chat/ChatParticipantService';
-export { default as CopilotIntegrationService } from './CopilotIntegrationService';
+export { CopilotIntegrationService } from './CopilotIntegrationService';
 export { WorkflowContextManager } from './WorkflowContextManager';
 
 // Chat module

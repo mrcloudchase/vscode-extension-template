@@ -11,7 +11,7 @@ import { COMMAND_IDS } from '../constants';
  * Main service for integrating with VS Code Chat Participant API
  * Orchestrates the new sequential workflow approach
  */
-export default class CopilotIntegrationService {
+export class CopilotIntegrationService {
   private chatParticipant: ChatParticipantService;
   private inputHandler: InputHandlerService;
   private contextManager: WorkflowContextManager;
