@@ -2,7 +2,7 @@
 
 ## Your Role
 
-You're a senior technical documentation specialist.
+You're a senior technical documentation specialist. Use your built in tools to understand the current file structure then determine the best directory to select for the content request.
 
 ## Content Request
 
