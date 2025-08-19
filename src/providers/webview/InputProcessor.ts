@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
-import { ExtensionContext, ExtensionMessage, MessageType } from '../../types/ExtensionContext';
-import { InputFile } from '../../models/InputModels';
+import { ExtensionContext, ExtensionMessage, MessageType, WorkflowOptions } from '../../types/ExtensionContext';
 
 /**
- * Processes input files and launches AI workflow
- * Single responsibility: Input processing and workflow initiation
+ * Processes workflow execution requests
+ * Single responsibility: Workflow initiation and status reporting
  */
 export class InputProcessor {
   private copilotService: any | undefined;
@@ -15,9 +14,9 @@ export class InputProcessor {
   ) {}
 
   /**
-   * Handle input processing - launches AI workflow
+   * Handle workflow execution request
    */
-  public async processInputs(goal: string, inputs: InputFile[], messageId?: string): Promise<void> {
+  public async executeWorkflow(options: WorkflowOptions, messageId?: string): Promise<void> {
     try {
       // Initialize CopilotIntegrationService if not already done (lazy loading)
       if (!this.copilotService) {
@@ -29,73 +28,54 @@ export class InputProcessor {
 
       // Send processing status
       await this.sendMessage({
-        type: MessageType.PROCESSING_STATUS,
-        payload: { status: 'processing', message: 'Preparing content request...' },
+        type: MessageType.WORKFLOW_STATUS,
+        payload: { 
+          message: 'Preparing workflow execution...',
+          step: 0,
+          stepName: 'Initialization'
+        },
       });
 
-      // Use the Chat Participant workflow
-      const result = await this.copilotService.createNewContent(goal, inputs, {
+      // Execute workflow through chat participant
+      const result = await this.copilotService.executeWorkflow(options, {
         onProgress: (step: string, message: string) => {
           // Send real-time progress updates to webview
           this.sendMessage({
-            type: MessageType.PROCESSING_STATUS,
-            payload: { status: step, message },
+            type: MessageType.WORKFLOW_STATUS,
+            payload: { message },
           });
         },
       });
 
-      // Send response back to webview
-      await this.sendResponse(result, goal, inputs, messageId);
+      // Send completion message
+      await this.sendMessage({
+        type: MessageType.WORKFLOW_COMPLETE,
+        payload: {
+          success: result.success,
+          error: result.error,
+          message: result.success 
+            ? 'Workflow initiated successfully. Check the chat panel for progress.'
+            : `Failed to initiate workflow: ${result.error}`,
+        },
+        id: messageId,
+      });
 
-      // Show chat participant status
-      await this.showChatParticipantStatus();
+      // Show chat participant status if there's an issue
+      if (!result.success) {
+        await this.showChatParticipantStatus();
+      }
     } catch (error) {
-      this.context.logger.error('Failed to process inputs', error);
+      this.context.logger.error('Failed to execute workflow', error);
 
       await this.sendMessage({
-        type: MessageType.PROCESSING_STATUS,
+        type: MessageType.WORKFLOW_COMPLETE,
         payload: {
-          status: 'error',
-          message: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
         },
+        id: messageId,
       });
     }
-  }
-
-  /**
-   * Send response to webview after processing
-   */
-  private async sendResponse(
-    result: any,
-    goal: string,
-    inputs: InputFile[],
-    messageId?: string
-  ): Promise<void> {
-    const response = {
-      response: result.success
-        ? `🤖 **Chat Participant Activated!**\n\nYour request has been sent to the @content-creator chat participant. The sequential workflow will continue in the VS Code Chat interface.\n\n**Next Steps:**\n1. Check the Chat panel (should have opened automatically)\n2. The @content-creator participant will guide you through the workflow\n3. You'll see real-time progress as it analyzes your repository and creates content\n\n**Your Request:** ${goal}\n**Input Files:** ${inputs.length} file(s) processed`
-        : `❌ **Failed to launch Chat Participant**\n\nError: ${result.error}\n\nPlease try again or check the extension logs for more details.`,
-      sources: inputs.map((input) => input.name),
-      timestamp: new Date(),
-    };
-
-    // Send response back to webview
-    await this.sendMessage({
-      type: MessageType.COPILOT_RESPONSE,
-      payload: response,
-      id: messageId,
-    });
-
-    // Show final status
-    await this.sendMessage({
-      type: MessageType.PROCESSING_STATUS,
-      payload: {
-        status: result.success ? 'launched' : 'error',
-        message: result.success
-          ? 'Chat participant launched! Continue in the Chat panel.'
-          : `Error: ${result.error}`,
-      },
-    });
   }
 
   /**

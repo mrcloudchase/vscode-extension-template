@@ -8,8 +8,9 @@
     // State management
     let state = {
         theme: 'light',
+        contentGoal: '',
         inputs: [],
-        goal: ''
+        interactiveMode: false
     };
 
     // Message types enum (matching the extension)
@@ -19,13 +20,13 @@
         UPDATE_THEME: 'updateTheme',
         UPDATE_CONFIG: 'updateConfig',
         SHOW_MESSAGE: 'showMessage',
-        PROCESSING_STATUS: 'processingStatus',
-        COPILOT_RESPONSE: 'copilotResponse',
+        WORKFLOW_STATUS: 'workflowStatus',
+        WORKFLOW_COMPLETE: 'workflowComplete',
         
         // From webview to extension
         LOG_MESSAGE: 'logMessage',
         READY: 'ready',
-        PROCESS_INPUTS: 'processInputs',
+        EXECUTE_WORKFLOW: 'executeWorkflow',
         SELECT_FILES: 'selectFiles'
     };
 
@@ -64,67 +65,68 @@
             refreshBtn.addEventListener('click', handleRefresh);
         }
 
-        // New input processing event listeners
+        // Input event listeners
         const selectFilesBtn = document.getElementById('select-files-btn');
         const addUrlBtn = document.getElementById('add-url-btn');
-        const addGithubBtn = document.getElementById('add-github-pr-btn');
-        const processBtn = document.getElementById('process-btn');
-        const clearBtn = document.getElementById('clear-btn');
-        const goalInput = document.getElementById('goal-input');
+        const addGithubBtn = document.getElementById('add-github-btn');
         
         if (selectFilesBtn) {
             selectFilesBtn.addEventListener('click', handleSelectFiles);
         }
-
         if (addUrlBtn) {
             addUrlBtn.addEventListener('click', showUrlInput);
         }
-
         if (addGithubBtn) {
             addGithubBtn.addEventListener('click', showGithubInput);
-        }
-
-        if (processBtn) {
-            processBtn.addEventListener('click', handleProcessInputs);
-        }
-
-        if (clearBtn) {
-            clearBtn.addEventListener('click', handleClearAll);
-        }
-
-        if (goalInput) {
-            goalInput.addEventListener('input', updateProcessButton);
         }
 
         // URL input handlers
         const addUrlConfirm = document.getElementById('add-url-confirm');
         const urlInput = document.getElementById('url-input');
-        
         if (addUrlConfirm) {
             addUrlConfirm.addEventListener('click', handleAddUrl);
         }
-        
         if (urlInput) {
             urlInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    handleAddUrl();
-                }
+                if (e.key === 'Enter') handleAddUrl();
             });
         }
 
         // GitHub input handlers
         const addGithubConfirm = document.getElementById('add-github-confirm');
         const githubInput = document.getElementById('github-input');
-        
         if (addGithubConfirm) {
             addGithubConfirm.addEventListener('click', handleAddGithub);
         }
-        
         if (githubInput) {
             githubInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    handleAddGithub();
-                }
+                if (e.key === 'Enter') handleAddGithub();
+            });
+        }
+
+        // Content goal and action listeners
+        const executeBtn = document.getElementById('execute-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const contentGoalInput = document.getElementById('content-goal');
+        const interactiveModeCheckbox = document.getElementById('interactive-mode');
+        
+        if (executeBtn) {
+            executeBtn.addEventListener('click', handleExecuteWorkflow);
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', handleClearAll);
+        }
+
+        if (contentGoalInput) {
+            contentGoalInput.addEventListener('input', updateExecuteButton);
+        }
+
+        if (interactiveModeCheckbox) {
+            interactiveModeCheckbox.addEventListener('change', (e) => {
+                state.interactiveMode = e.target.checked;
+                vscode.setState(state);
+                log('info', `Interactive mode: ${state.interactiveMode}`);
             });
         }
 
@@ -141,10 +143,6 @@
         log('debug', 'Received message:', message);
 
         switch (message.type) {
-            case MessageType.UPDATE_CONTENT:
-                handleUpdateContent(message.payload);
-                break;
-            
             case MessageType.UPDATE_THEME:
                 handleUpdateTheme(message.payload);
                 break;
@@ -157,12 +155,16 @@
                 handleShowMessage(message.payload);
                 break;
             
-            case MessageType.PROCESSING_STATUS:
-                handleProcessingStatus(message.payload);
+            case MessageType.WORKFLOW_STATUS:
+                handleWorkflowStatus(message.payload);
                 break;
             
-            case MessageType.COPILOT_RESPONSE:
-                handleCopilotResponse(message.payload);
+            case MessageType.WORKFLOW_COMPLETE:
+                handleWorkflowComplete(message.payload);
+                break;
+            
+            case MessageType.UPDATE_CONTENT:
+                handleUpdateContent(message.payload);
                 break;
             
             default:
@@ -199,20 +201,173 @@
     }
 
     /**
-     * Handle content update from extension
+     * Handle file selection
      */
-    function handleUpdateContent(payload) {
-        if (payload.files) {
-            // Add files to inputs
-            payload.files.forEach(file => {
-                state.inputs.push(file);
+    function handleSelectFiles() {
+        log('info', 'Requesting file selection');
+        sendMessage({
+            type: MessageType.SELECT_FILES,
+            id: generateId()
+        });
+    }
+
+    /**
+     * Show URL input
+     */
+    function showUrlInput() {
+        const urlContainer = document.getElementById('url-input-container');
+        const githubContainer = document.getElementById('github-input-container');
+        if (urlContainer) {
+            urlContainer.classList.remove('hidden');
+            document.getElementById('url-input').focus();
+        }
+        if (githubContainer) {
+            githubContainer.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Show GitHub input
+     */
+    function showGithubInput() {
+        const githubContainer = document.getElementById('github-input-container');
+        const urlContainer = document.getElementById('url-input-container');
+        if (githubContainer) {
+            githubContainer.classList.remove('hidden');
+            document.getElementById('github-input').focus();
+        }
+        if (urlContainer) {
+            urlContainer.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Handle adding URL
+     */
+    function handleAddUrl() {
+        const input = document.getElementById('url-input');
+        const container = document.getElementById('url-input-container');
+        
+        if (input && input.value.trim()) {
+            const url = input.value.trim();
+            state.inputs.push({
+                id: generateId(),
+                name: url,
+                type: 'url',
+                uri: url
             });
             
             updateInputList();
-            updateProcessButton();
+            updateExecuteButton();
+            
+            input.value = '';
+            container.classList.add('hidden');
         }
-        // Save state for any content updates
+    }
+
+    /**
+     * Handle adding GitHub PR
+     */
+    function handleAddGithub() {
+        const input = document.getElementById('github-input');
+        const container = document.getElementById('github-input-container');
+        
+        if (input && input.value.trim()) {
+            const url = input.value.trim();
+            state.inputs.push({
+                id: generateId(),
+                name: `GitHub: ${url.split('/').pop()}`,
+                type: 'github_pr',
+                uri: url
+            });
+            
+            updateInputList();
+            updateExecuteButton();
+            
+            input.value = '';
+            container.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Update input list display
+     */
+    function updateInputList() {
+        const listEl = document.getElementById('input-list');
+        if (!listEl) return;
+        
+        if (state.inputs.length === 0) {
+            listEl.innerHTML = '<div class="empty-state">No inputs added yet</div>';
+        } else {
+            listEl.innerHTML = state.inputs.map((input, index) => {
+                // Map file types to appropriate icons
+                let iconClass = 'file';
+                if (input.type === 'url') iconClass = 'globe';
+                else if (input.type === 'github_pr') iconClass = 'github';
+                else if (input.type === 'markdown') iconClass = 'markdown';
+                else if (input.type === 'word') iconClass = 'file-text';
+                else if (input.type === 'pdf') iconClass = 'file-pdf';
+                else if (input.type === 'powerpoint') iconClass = 'file-media';
+                else if (input.type === 'text') iconClass = 'file-code';
+                else if (input.type === 'image') iconClass = 'file-media';
+                
+                return `
+                    <div class="input-item">
+                        <span class="input-icon codicon codicon-${iconClass}"></span>
+                        <span class="input-name" title="${input.name}">${input.name}</span>
+                        <button class="remove-btn" onclick="removeInput(${index})" title="Remove">
+                            <span class="codicon codicon-close"></span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
         vscode.setState(state);
+    }
+
+    /**
+     * Remove input
+     */
+    window.removeInput = function(index) {
+        state.inputs.splice(index, 1);
+        updateInputList();
+        updateExecuteButton();
+    };
+
+    /**
+     * Handle execute workflow
+     */
+    function handleExecuteWorkflow() {
+        const contentGoalInput = document.getElementById('content-goal');
+        const contentGoal = contentGoalInput ? contentGoalInput.value.trim() : '';
+        
+        if (!contentGoal) {
+            showLocalMessage('Please enter a content goal', 'error');
+            return;
+        }
+        
+        log('info', 'Executing workflow with goal:', contentGoal);
+        log('info', 'Inputs:', state.inputs);
+        state.contentGoal = contentGoal;
+        
+        // Disable execute button
+        const executeBtn = document.getElementById('execute-btn');
+        if (executeBtn) {
+            executeBtn.disabled = true;
+            executeBtn.textContent = 'Executing...';
+        }
+        
+        // Send execute request
+        sendMessage({
+            type: MessageType.EXECUTE_WORKFLOW,
+            payload: {
+                contentGoal: contentGoal,
+                inputs: state.inputs,
+                interactiveMode: state.interactiveMode
+            },
+            id: generateId()
+        });
     }
 
     /**
@@ -256,7 +411,11 @@
         // Create message element
         const messageEl = document.createElement('div');
         messageEl.className = `message message-${type} fade-in`;
-        messageEl.textContent = text;
+        
+        // Add icon based on type
+        const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+        messageEl.innerHTML = `<span style="margin-right: 8px; font-weight: bold;">${icon}</span>${text}`;
+        
         messageEl.style.cssText = `
             position: fixed;
             top: 20px;
@@ -265,18 +424,28 @@
             background: var(--vscode-notifications-background);
             color: var(--vscode-notifications-foreground);
             border: 1px solid var(--vscode-notifications-border);
-            border-radius: 6px;
+            border-radius: 8px;
             z-index: 1000;
-            max-width: 300px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            animation: slideInRight 0.3s ease-out;
         `;
         
         // Add type-specific styling
         if (type === 'error') {
-            messageEl.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
-            messageEl.style.background = 'var(--vscode-inputValidation-errorBackground)';
+            messageEl.style.borderColor = 'var(--vscode-errorForeground)';
+            messageEl.style.background = 'rgba(255, 0, 0, 0.1)';
+            messageEl.style.color = 'var(--vscode-errorForeground)';
         } else if (type === 'success') {
             messageEl.style.borderColor = 'var(--vscode-terminal-ansiGreen)';
+            messageEl.style.background = 'rgba(0, 255, 0, 0.1)';
+            messageEl.style.color = 'var(--vscode-terminal-ansiGreen)';
+        } else if (type === 'warning') {
+            messageEl.style.borderColor = 'var(--vscode-editorWarning-foreground)';
+            messageEl.style.background = 'rgba(255, 200, 0, 0.1)';
+            messageEl.style.color = 'var(--vscode-editorWarning-foreground)';
         }
         
         document.body.appendChild(messageEl);
@@ -284,10 +453,37 @@
         // Remove after 3 seconds
         setTimeout(() => {
             messageEl.style.opacity = '0';
+            messageEl.style.transform = 'translateX(100%)';
             setTimeout(() => {
-                document.body.removeChild(messageEl);
+                if (messageEl.parentNode) {
+                    document.body.removeChild(messageEl);
+                }
             }, 300);
         }, 3000);
+    }
+
+    /**
+     * Handle content update (for file selections)
+     */
+    function handleUpdateContent(payload) {
+        if (payload.files) {
+            // Add files to inputs
+            const addedCount = payload.files.length;
+            payload.files.forEach(file => {
+                state.inputs.push({
+                    id: generateId(),
+                    name: file.name,
+                    type: file.type,
+                    uri: file.uri
+                });
+            });
+            
+            updateInputList();
+            updateExecuteButton();
+            
+            // Show success message
+            showLocalMessage(`Successfully added ${addedCount} file(s)`, 'success');
+        }
     }
 
     /**
@@ -298,9 +494,19 @@
             document.body.className = `theme-${state.theme}`;
         }
         
-        // Update input list and process button
+        // Update content goal and interactive mode
+        const contentGoalInput = document.getElementById('content-goal');
+        if (contentGoalInput && state.contentGoal) {
+            contentGoalInput.value = state.contentGoal;
+        }
+        
+        const interactiveModeCheckbox = document.getElementById('interactive-mode');
+        if (interactiveModeCheckbox) {
+            interactiveModeCheckbox.checked = state.interactiveMode;
+        }
+        
         updateInputList();
-        updateProcessButton();
+        updateExecuteButton();
     }
 
     /**
@@ -311,150 +517,90 @@
     }
 
     /**
-     * Handle file selection
+     * Handle workflow status updates
      */
-    function handleSelectFiles() {
-        log('info', 'Requesting file selection');
+    function handleWorkflowStatus(payload) {
+        const statusEl = document.getElementById('workflow-status');
+        const statusText = document.getElementById('status-text');
+        const currentStep = document.getElementById('current-step');
         
-        sendMessage({
-            type: MessageType.SELECT_FILES,
-            id: generateId()
-        });
+        if (statusEl && statusText) {
+            statusEl.classList.remove('hidden');
+            statusText.textContent = payload.message || '';
+            
+            if (currentStep && payload.step) {
+                currentStep.textContent = `Step ${payload.step}: ${payload.stepName || ''}`;
+                currentStep.classList.remove('hidden');
+            }
+        }
+        
+        // Log the status
+        log('info', `Workflow status: ${payload.message}`);
     }
 
     /**
-     * Show URL input
+     * Handle workflow completion
      */
-    function showUrlInput() {
-        const container = document.getElementById('url-input-container');
-        const githubContainer = document.getElementById('github-input-container');
+    function handleWorkflowComplete(payload) {
+        const executeBtn = document.getElementById('execute-btn');
+        const statusEl = document.getElementById('workflow-status');
+        const responseSection = document.getElementById('response-section');
+        const responseContent = document.getElementById('response-content');
         
-        if (container) {
-            container.classList.remove('hidden');
-            document.getElementById('url-input').focus();
+        // Re-enable execute button
+        if (executeBtn) {
+            executeBtn.disabled = false;
+            executeBtn.textContent = 'Execute Workflow';
+            updateExecuteButton();
         }
         
-        if (githubContainer) {
-            githubContainer.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Show GitHub input
-     */
-    function showGithubInput() {
-        const container = document.getElementById('github-input-container');
-        const urlContainer = document.getElementById('url-input-container');
-        
-        if (container) {
-            container.classList.remove('hidden');
-            document.getElementById('github-input').focus();
-        }
-        
-        if (urlContainer) {
-            urlContainer.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Handle adding URL
-     */
-    function handleAddUrl() {
-        const input = document.getElementById('url-input');
-        const container = document.getElementById('url-input-container');
-        
-        if (input && input.value.trim()) {
-            const url = input.value.trim();
+        // Show completion message
+        if (responseSection && responseContent) {
+            responseSection.classList.remove('hidden');
             
-            // Add to inputs
-            state.inputs.push({
-                uri: url,
-                name: url,
-                type: 'url'
-            });
+            if (payload.success) {
+                responseContent.innerHTML = `
+                    <div class="success-message">
+                        <h3>✅ Workflow Complete!</h3>
+                        <p>${payload.message || 'Documentation created successfully.'}</p>
+                        ${payload.filePath ? `<p><strong>File:</strong> <code>${payload.filePath}</code></p>` : ''}
+                    </div>
+                `;
+            } else {
+                responseContent.innerHTML = `
+                    <div class="error-message">
+                        <h3>❌ Workflow Failed</h3>
+                        <p>${payload.error || 'An error occurred during workflow execution.'}</p>
+                    </div>
+                `;
+            }
             
-            updateInputList();
-            updateProcessButton();
-            
-            // Clear and hide input
-            input.value = '';
-            container.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Handle adding GitHub PR
-     */
-    function handleAddGithub() {
-        const input = document.getElementById('github-input');
-        const container = document.getElementById('github-input-container');
-        
-        if (input && input.value.trim()) {
-            const url = input.value.trim();
-            
-            // Add to inputs
-            state.inputs.push({
-                uri: url,
-                name: `GitHub PR: ${url.split('/').pop()}`,
-                type: 'github_pr'
-            });
-            
-            updateInputList();
-            updateProcessButton();
-            
-            // Clear and hide input
-            input.value = '';
-            container.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Handle process inputs
-     */
-    function handleProcessInputs() {
-        const goalInput = document.getElementById('goal-input');
-        const goal = goalInput ? goalInput.value.trim() : '';
-        
-        if (state.inputs.length === 0 || !goal) {
-            showLocalMessage('Please add inputs and describe your goal', 'error');
-            return;
+            // Scroll to response
+            responseSection.scrollIntoView({ behavior: 'smooth' });
         }
         
-        log('info', 'Processing inputs with goal:', goal);
-        state.goal = goal;
-        
-        // Disable process button
-        const processBtn = document.getElementById('process-btn');
-        if (processBtn) {
-            processBtn.disabled = true;
-            processBtn.textContent = 'Processing...';
+        // Hide status after a moment
+        if (statusEl) {
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 3000);
         }
-        
-        // Send process request
-        sendMessage({
-            type: MessageType.PROCESS_INPUTS,
-            payload: {
-                goal: goal,
-                inputs: state.inputs
-            },
-            id: generateId()
-        });
     }
 
     /**
      * Handle clear all
      */
     function handleClearAll() {
+        state.contentGoal = '';
         state.inputs = [];
-        state.goal = '';
         
-        const goalInput = document.getElementById('goal-input');
-        if (goalInput) {
-            goalInput.value = '';
+        const contentGoalInput = document.getElementById('content-goal');
+        if (contentGoalInput) {
+            contentGoalInput.value = '';
         }
         
         updateInputList();
-        updateProcessButton();
+        updateExecuteButton();
         
         // Hide response section
         const responseSection = document.getElementById('response-section');
@@ -462,31 +608,10 @@
             responseSection.classList.add('hidden');
         }
         
-        // Clear processing status
-        const statusEl = document.getElementById('processing-status');
+        // Clear workflow status
+        const statusEl = document.getElementById('workflow-status');
         if (statusEl) {
             statusEl.classList.add('hidden');
-            statusEl.textContent = '';
-        }
-    }
-
-    /**
-     * Update input list display
-     */
-    function updateInputList() {
-        const listEl = document.getElementById('input-list');
-        if (!listEl) return;
-        
-        if (state.inputs.length === 0) {
-            listEl.innerHTML = '<div style="color: var(--vscode-descriptionForeground); text-align: center; padding: 20px;">No inputs added yet</div>';
-        } else {
-            listEl.innerHTML = state.inputs.map((input, index) => `
-                <div class="input-item">
-                    <span class="input-item-name">${input.name}</span>
-                    <span class="input-item-type">${input.type}</span>
-                    <button class="input-item-remove" onclick="removeInput(${index})">✕</button>
-                </div>
-            `).join('');
         }
         
         // Save state
@@ -494,79 +619,19 @@
     }
 
     /**
-     * Remove input item
+     * Update execute button state
      */
-    window.removeInput = function(index) {
-        state.inputs.splice(index, 1);
-        updateInputList();
-        updateProcessButton();
-    };
-
-    /**
-     * Update process button state
-     */
-    function updateProcessButton() {
-        const processBtn = document.getElementById('process-btn');
-        const goalInput = document.getElementById('goal-input');
+    function updateExecuteButton() {
+        const executeBtn = document.getElementById('execute-btn');
+        const contentGoalInput = document.getElementById('content-goal');
         
-        if (processBtn) {
-            const hasInputs = state.inputs.length > 0;
-            const hasGoal = goalInput && goalInput.value.trim().length > 0;
+        if (executeBtn) {
+            const hasGoal = contentGoalInput && contentGoalInput.value.trim().length > 0;
             
-            processBtn.disabled = !(hasInputs && hasGoal);
-            processBtn.textContent = 'Process with Copilot';
+            executeBtn.disabled = !hasGoal;
+            executeBtn.textContent = 'Execute Workflow';
         }
     }
 
-    /**
-     * Handle processing status
-     */
-    function handleProcessingStatus(payload) {
-        const statusEl = document.getElementById('processing-status');
-        const processBtn = document.getElementById('process-btn');
-        
-        if (statusEl) {
-            statusEl.classList.remove('hidden', 'processing', 'complete', 'error');
-            statusEl.classList.add(payload.status);
-            statusEl.textContent = payload.message;
-            
-            if (payload.status === 'complete' || payload.status === 'error') {
-                // Re-enable process button
-                if (processBtn) {
-                    processBtn.disabled = false;
-                    processBtn.textContent = 'Process with Copilot';
-                    updateProcessButton();
-                }
-                
-                // Hide status after 5 seconds if complete
-                if (payload.status === 'complete') {
-                    setTimeout(() => {
-                        statusEl.classList.add('hidden');
-                    }, 5000);
-                }
-            }
-        }
-    }
 
-    /**
-     * Handle Copilot response
-     */
-    function handleCopilotResponse(payload) {
-        const responseSection = document.getElementById('response-section');
-        const responseContent = document.getElementById('response-content');
-        
-        if (responseSection && responseContent) {
-            responseSection.classList.remove('hidden');
-            responseContent.textContent = payload.response;
-            
-            // Add sources if available
-            if (payload.sources && payload.sources.length > 0) {
-                const sourcesHtml = `\n\n---\nSources:\n${payload.sources.map(s => `• ${s}`).join('\n')}`;
-                responseContent.textContent += sourcesHtml;
-            }
-            
-            // Scroll to response
-            responseSection.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
 })();

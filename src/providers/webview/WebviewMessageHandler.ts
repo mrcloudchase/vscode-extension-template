@@ -5,13 +5,13 @@ import {
   ExtensionMessage,
   MessageType,
   WebviewState,
+  WorkflowOptions,
 } from '../../types/ExtensionContext';
-import { InputFile, InputType } from '../../models/InputModels';
 import { InputProcessor } from './InputProcessor';
 
 /**
- * Handles webview message routing and basic operations
- * Single responsibility: Message routing and basic webview operations
+ * Handles webview message routing and workflow execution
+ * Single responsibility: Message routing and workflow coordination
  */
 export class WebviewMessageHandler {
   private state: WebviewState = { isReady: false };
@@ -40,8 +40,8 @@ export class WebviewMessageHandler {
         this.handleLogMessage(message);
         break;
 
-      case MessageType.PROCESS_INPUTS:
-        await this.handleProcessInputs(message);
+      case MessageType.EXECUTE_WORKFLOW:
+        await this.handleExecuteWorkflow(message);
         break;
 
       case MessageType.SELECT_FILES:
@@ -66,15 +66,6 @@ export class WebviewMessageHandler {
     await this.sendMessage({
       type: MessageType.UPDATE_THEME,
       payload: { theme },
-    });
-
-    // Send initial data
-    await this.sendMessage({
-      type: MessageType.UPDATE_CONTENT,
-      payload: {
-        title: 'AI Content Developer',
-        content: 'Create professional technical documentation with AI assistance.',
-      },
     });
 
     this.context.logger.info('Webview initialized');
@@ -118,6 +109,20 @@ export class WebviewMessageHandler {
   }
 
   /**
+   * Handle workflow execution request
+   */
+  private async handleExecuteWorkflow(message: WebviewMessage): Promise<void> {
+    const options = message.payload as WorkflowOptions;
+    
+    this.context.logger.info(`Executing workflow: ${options.contentGoal}`);
+    this.context.logger.info(`Interactive mode: ${options.interactiveMode}`);
+    this.context.logger.info(`Inputs: ${options.inputs.length} items`);
+
+    // Delegate to InputProcessor
+    await this.inputProcessor.executeWorkflow(options, message.id);
+  }
+
+  /**
    * Handle file selection
    */
   private async handleSelectFiles(message: WebviewMessage): Promise<void> {
@@ -125,41 +130,43 @@ export class WebviewMessageHandler {
       const options: vscode.OpenDialogOptions = {
         canSelectMany: true,
         filters: {
-          Documents: ['docx', 'doc', 'pdf', 'pptx', 'ppt', 'txt', 'md'],
-          'All Files': ['*'],
-        },
+          'Documents': ['md', 'markdown', 'txt', 'doc', 'docx', 'pdf', 'ppt', 'pptx'],
+          'Images': ['png', 'jpg', 'jpeg', 'gif', 'svg'],
+          'All Files': ['*']
+        }
       };
 
       const fileUris = await vscode.window.showOpenDialog(options);
 
       if (fileUris && fileUris.length > 0) {
-        const files: InputFile[] = fileUris.map((uri) => ({
-          uri: uri.toString(),
-          name: uri.path.split('/').pop() || 'Unknown',
-          type: InputType.UNKNOWN,
-        }));
+        const files = fileUris.map(uri => {
+          const name = uri.path.split('/').pop() || 'Unknown';
+          const ext = name.split('.').pop()?.toLowerCase() || '';
+          
+          let type = 'file';
+          if (['md', 'markdown'].includes(ext)) type = 'markdown';
+          else if (['doc', 'docx'].includes(ext)) type = 'word';
+          else if (ext === 'pdf') type = 'pdf';
+          else if (['ppt', 'pptx'].includes(ext)) type = 'powerpoint';
+          else if (ext === 'txt') type = 'text';
+          else if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) type = 'image';
+          
+          return {
+            name,
+            type,
+            uri: uri.toString()
+          };
+        });
 
         await this.sendMessage({
           type: MessageType.UPDATE_CONTENT,
           payload: { files },
-          id: message.id,
+          id: message.id
         });
       }
     } catch (error) {
       this.context.logger.error('Failed to select files', error);
     }
-  }
-
-  /**
-   * Handle input processing by delegating to InputProcessor
-   */
-  private async handleProcessInputs(message: WebviewMessage): Promise<void> {
-    const { goal, inputs } = message.payload as {
-      goal: string;
-      inputs: InputFile[];
-    };
-
-    await this.inputProcessor.processInputs(goal, inputs, message.id);
   }
 
   /**

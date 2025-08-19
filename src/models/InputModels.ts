@@ -1,47 +1,36 @@
 /**
- * Models for various input types and processing results
+ * Input type enumeration
  */
-
 export enum InputType {
-  WORD_DOC = 'word',
+  FILE = 'file',
+  URL = 'url',
+  GITHUB_PR = 'github_pr',
+  MARKDOWN = 'markdown',
+  WORD = 'word',
   PDF = 'pdf',
   POWERPOINT = 'powerpoint',
-  GITHUB_PR = 'github_pr',
-  URL = 'url',
   TEXT = 'text',
-  UNKNOWN = 'unknown',
+  IMAGE = 'image',
 }
 
-export interface InputFile {
-  uri: string;
+/**
+ * Input file/source interface
+ */
+export interface InputSource {
+  id: string;
   name: string;
   type: InputType;
-  size?: number;
+  uri: string;
+  content?: string;
 }
 
-export interface ProcessedContent {
-  source: string;
-  type: InputType;
-  text: string;
-  metadata?: Record<string, any>;
-  error?: string;
-}
-
-export interface ProcessingResult {
-  success: boolean;
-  content?: ProcessedContent;
-  error?: string;
-}
-
-export interface GitHubPRInfo {
-  owner: string;
-  repo: string;
-  prNumber: number;
-}
-
-export interface URLContent {
-  url: string;
-  title?: string;
-  content: string;
-  contentType?: string;
+/**
+ * Processed input result
+ */
+export interface ProcessedInput {
+  source: InputSource;
+  extractedContent: string;
+  metadata?: {
+    [key: string]: any;
+  };
 }

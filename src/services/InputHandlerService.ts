@@ -1,106 +1,202 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ExtensionContext } from '../types/ExtensionContext';
-import { InputFile, InputType, ProcessedContent, ProcessingResult } from '../models/InputModels';
-import { ServiceFactory } from '../factories/ServiceFactory';
-import { FILE_EXTENSIONS } from '../constants';
+import { InputSource, ProcessedInput, InputType } from '../models/InputModels';
 
 /**
- * Service responsible for input type detection, routing, and orchestrating processing
+ * Service for handling and processing various input types
+ * Routes inputs to appropriate handlers and extracts content
  */
 export class InputHandlerService {
-  private serviceFactory: ServiceFactory;
-
-  constructor(private context: ExtensionContext) {
-    this.serviceFactory = new ServiceFactory(context);
-  }
+  constructor(private context: ExtensionContext) {}
 
   /**
-   * Process multiple inputs and return processed contents
+   * Process multiple input sources
    */
-  async processInputs(inputs: InputFile[]): Promise<ProcessedContent[]> {
-    const results: ProcessedContent[] = [];
-    const errors: string[] = [];
-
-    this.context.logger.info(`Processing ${inputs.length} inputs`);
+  public async processInputs(inputs: InputSource[]): Promise<ProcessedInput[]> {
+    const processed: ProcessedInput[] = [];
 
     for (const input of inputs) {
       try {
-        // Determine input type if not specified
-        if (input.type === InputType.UNKNOWN || !input.type) {
-          input.type = this.detectInputType(input);
-        }
-
-        this.context.logger.debug(`Processing input: ${input.name} as type: ${input.type}`);
-
-        // Get appropriate service (lazy initialization)
-        const service = await this.serviceFactory.getServiceForType(input.type);
-
-        if (!service) {
-          errors.push(`No service available for input type: ${input.type}`);
-          continue;
-        }
-
-        // Process the input
-        const result = await service.process(input);
-
-        if (result.success && result.content) {
-          results.push(result.content);
-          this.context.logger.info(`Successfully processed: ${input.name}`);
-        } else {
-          errors.push(result.error || `Failed to process: ${input.name}`);
-        }
+        const result = await this.processInput(input);
+        processed.push(result);
       } catch (error) {
-        const errorMsg = `Error processing ${input.name}: ${error instanceof Error ? error.message : String(error)}`;
-        errors.push(errorMsg);
-        this.context.logger.error(errorMsg);
+        this.context.logger.error(`Failed to process input ${input.name}:`, error);
+        // Add error result
+        processed.push({
+          source: input,
+          extractedContent: `Error processing ${input.name}: ${error instanceof Error ? error.message : String(error)}`,
+          metadata: { error: true }
+        });
       }
     }
 
-    // Show errors if any
-    if (errors.length > 0) {
-      const errorMessage = errors.join('\n');
-      void vscode.window.showWarningMessage(`Some inputs could not be processed:\n${errorMessage}`);
+    return processed;
+  }
+
+  /**
+   * Process a single input based on its type
+   */
+  private async processInput(input: InputSource): Promise<ProcessedInput> {
+    this.context.logger.info(`Processing input: ${input.name} (${input.type})`);
+
+    switch (input.type) {
+      case InputType.MARKDOWN:
+      case InputType.TEXT:
+        return await this.processTextFile(input);
+      
+      case InputType.URL:
+        return await this.processUrl(input);
+      
+      case InputType.GITHUB_PR:
+        return await this.processGithubPR(input);
+      
+      case InputType.WORD:
+      case InputType.PDF:
+      case InputType.POWERPOINT:
+        return await this.processDocumentFile(input);
+      
+      case InputType.IMAGE:
+        return await this.processImage(input);
+      
+      default:
+        return await this.processGenericFile(input);
     }
-
-    return results;
   }
 
   /**
-   * Detect input type based on file extension or URL pattern
+   * Process text-based files (markdown, txt)
    */
-  private detectInputType(input: InputFile): InputType {
-    const name = input.name.toLowerCase();
-    const uri = input.uri.toLowerCase();
+  private async processTextFile(input: InputSource): Promise<ProcessedInput> {
+    try {
+      const uri = vscode.Uri.parse(input.uri);
+      const content = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(content).toString('utf8');
 
-    // Check URLs first (before file extensions) since URLs might contain file extensions
-    if (uri.includes('github.com') && uri.includes('/pull/')) {
-      return InputType.GITHUB_PR;
-    } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
-      return InputType.URL;
-    } else if (FILE_EXTENSIONS.WORD.some((ext) => name.endsWith(ext))) {
-      return InputType.WORD_DOC;
-    } else if (FILE_EXTENSIONS.PDF.some((ext) => name.endsWith(ext))) {
-      return InputType.PDF;
-    } else if (FILE_EXTENSIONS.POWERPOINT.some((ext) => name.endsWith(ext))) {
-      return InputType.POWERPOINT;
-    } else if (FILE_EXTENSIONS.TEXT.some((ext) => name.endsWith(ext))) {
-      return InputType.TEXT;
+      return {
+        source: input,
+        extractedContent: text,
+        metadata: {
+          fileSize: content.byteLength,
+          encoding: 'utf8'
+        }
+      };
+    } catch (error) {
+      throw new Error(`Failed to read text file: ${error}`);
     }
-
-    return InputType.UNKNOWN;
   }
 
   /**
-   * Check if a specific input type is supported
+   * Process URL input
    */
-  public isTypeSupported(type: InputType): boolean {
-    return this.serviceFactory.isTypeSupported(type);
+  private async processUrl(input: InputSource): Promise<ProcessedInput> {
+    // For URLs, we'll just pass the URL to Copilot to fetch and process
+    return {
+      source: input,
+      extractedContent: `URL Content: ${input.uri}`,
+      metadata: {
+        type: 'url',
+        instruction: 'Please fetch and analyze the content from this URL'
+      }
+    };
   }
 
   /**
-   * Get all supported input types
+   * Process GitHub PR
    */
-  public getSupportedTypes(): InputType[] {
-    return this.serviceFactory.getSupportedTypes();
+  private async processGithubPR(input: InputSource): Promise<ProcessedInput> {
+    // For GitHub PRs, we'll pass the PR info to Copilot
+    return {
+      source: input,
+      extractedContent: `GitHub PR: ${input.uri}`,
+      metadata: {
+        type: 'github_pr',
+        instruction: 'Please fetch and analyze this GitHub pull request'
+      }
+    };
+  }
+
+  /**
+   * Process document files (Word, PDF, PowerPoint)
+   */
+  private async processDocumentFile(input: InputSource): Promise<ProcessedInput> {
+    // For complex document types, we'll let Copilot handle the extraction
+    const uri = vscode.Uri.parse(input.uri);
+    const fileName = path.basename(uri.fsPath);
+    
+    return {
+      source: input,
+      extractedContent: `Document File: ${fileName}`,
+      metadata: {
+        type: input.type,
+        filePath: uri.fsPath,
+        instruction: `Please extract and analyze the content from this ${input.type} file`
+      }
+    };
+  }
+
+  /**
+   * Process image files
+   */
+  private async processImage(input: InputSource): Promise<ProcessedInput> {
+    const uri = vscode.Uri.parse(input.uri);
+    const fileName = path.basename(uri.fsPath);
+    
+    return {
+      source: input,
+      extractedContent: `Image File: ${fileName}`,
+      metadata: {
+        type: 'image',
+        filePath: uri.fsPath,
+        instruction: 'Please analyze this image and describe its content'
+      }
+    };
+  }
+
+  /**
+   * Process generic files
+   */
+  private async processGenericFile(input: InputSource): Promise<ProcessedInput> {
+    try {
+      // Try to read as text
+      const uri = vscode.Uri.parse(input.uri);
+      const content = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(content).toString('utf8');
+      
+      // Check if it looks like text
+      if (this.isTextContent(text)) {
+        return {
+          source: input,
+          extractedContent: text,
+          metadata: {
+            fileSize: content.byteLength
+          }
+        };
+      } else {
+        // Binary file
+        return {
+          source: input,
+          extractedContent: `Binary File: ${input.name}`,
+          metadata: {
+            type: 'binary',
+            instruction: 'This appears to be a binary file'
+          }
+        };
+      }
+    } catch (error) {
+      throw new Error(`Failed to process file: ${error}`);
+    }
+  }
+
+  /**
+   * Check if content appears to be text
+   */
+  private isTextContent(content: string): boolean {
+    // Simple heuristic: check for null bytes or excessive control characters
+    const nullBytes = (content.match(/\0/g) || []).length;
+    const controlChars = (content.match(/[\x00-\x08\x0B-\x0C\x0E-\x1F]/g) || []).length;
+    
+    return nullBytes === 0 && controlChars < content.length * 0.1;
   }
 }

@@ -1,5 +1,4 @@
 import { ExtensionContext } from '../../types/ExtensionContext';
-import { WorkflowContextManager } from '../WorkflowContextManager';
 import { ChatParticipantRegistrar } from './ChatParticipantRegistrar';
 import { ChatRequestRouter } from './ChatRequestRouter';
 
@@ -11,11 +10,8 @@ export class ChatParticipantService {
   private registrar: ChatParticipantRegistrar;
   private router: ChatRequestRouter;
 
-  constructor(
-    private context: ExtensionContext,
-    private contextManager: WorkflowContextManager
-  ) {
-    this.router = new ChatRequestRouter(context, contextManager);
+  constructor(private context: ExtensionContext) {
+    this.router = new ChatRequestRouter(context);
     this.registrar = new ChatParticipantRegistrar(
       context,
       this.router.handleRequest.bind(this.router)

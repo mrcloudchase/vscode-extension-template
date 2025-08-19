@@ -1,25 +1,13 @@
-/**
- * Export all services for centralized access
- */
-
-// Core orchestration services
-export { ChatParticipantService } from './chat/ChatParticipantService';
+// Main services
 export { CopilotIntegrationService } from './CopilotIntegrationService';
-export { WorkflowContextManager } from './WorkflowContextManager';
+export { InputHandlerService } from './InputHandlerService';
 
-// Chat module
-export * from './chat';
+// Chat services
+export { ChatParticipantService } from './chat/ChatParticipantService';
+export { ChatRequestRouter } from './chat/ChatRequestRouter';
+export { ChatHelpResponder } from './chat/ChatHelpResponder';
+export { ChatParticipantRegistrar } from './chat/ChatParticipantRegistrar';
+export { PromptExecutor } from './chat/PromptExecutor';
 
-// Workflow module
-export * from './workflow';
-
-// Template and content services
-export { PromptService } from './PromptService';
-export { ContentPatternService } from './content/ContentPatternService';
-
-// Content module
-export * from './content';
-
-// File processing services
-export * from './processing';
-export { ServiceFactory } from '../factories/ServiceFactory';
+// Workflow services
+export { FileOperations } from './workflow/FileOperations';

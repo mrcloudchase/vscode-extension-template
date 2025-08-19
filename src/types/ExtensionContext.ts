@@ -20,13 +20,13 @@ export enum MessageType {
   UPDATE_THEME = 'updateTheme',
   UPDATE_CONFIG = 'updateConfig',
   SHOW_MESSAGE = 'showMessage',
-  PROCESSING_STATUS = 'processingStatus',
-  COPILOT_RESPONSE = 'copilotResponse',
+  WORKFLOW_STATUS = 'workflowStatus',
+  WORKFLOW_COMPLETE = 'workflowComplete',
 
   // From webview to extension
   LOG_MESSAGE = 'logMessage',
   READY = 'ready',
-  PROCESS_INPUTS = 'processInputs',
+  EXECUTE_WORKFLOW = 'executeWorkflow',
   SELECT_FILES = 'selectFiles',
 }
 
@@ -68,4 +68,18 @@ export interface WebviewState {
   data?: any;
   theme?: string;
   isReady: boolean;
+}
+
+/**
+ * Workflow execution options
+ */
+export interface WorkflowOptions {
+  contentGoal: string;
+  inputs: Array<{
+    id: string;
+    name: string;
+    type: string;
+    uri: string;
+  }>;
+  interactiveMode: boolean;
 }
