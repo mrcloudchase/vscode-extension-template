@@ -74,27 +74,23 @@ npm run compile
 
 ### Sequential Steps Explained
 
-1. **🔍 Repository Analysis**: 
-   - AI scans your workspace structure
-   - Identifies existing documentation patterns
-   - Detects project type and conventions
-
-2. **📁 Directory Selection**:
-   - AI selects optimal location for new content
+1. **📁 Directory Selection**:
+   - AI explores your workspace using built-in tools
+   - Finds optimal location for new content
    - Considers existing documentation organization
    - Provides reasoning for placement decision
 
-3. **🎯 Content Strategy**:
+2. **🎯 Content Strategy**:
    - AI decides: CREATE new content vs UPDATE existing
    - Analyzes content overlap and user journey
    - Ensures coherent documentation experience
 
-4. **🎨 Pattern Selection**:
+3. **🎨 Pattern Selection**:
    - AI chooses appropriate Microsoft documentation pattern
    - Matches user intent with optimal structure
    - Considers audience and technical complexity
 
-5. **✍️ Content Generation**:
+4. **✍️ Content Generation**:
    - AI creates professional, structured content
    - Follows Microsoft documentation standards
    - Includes proper front matter and formatting

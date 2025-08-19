@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ExtensionContext } from '../types/ExtensionContext';
-import { WebviewProvider } from '../providers/WebviewProvider';
+import { WebviewProvider } from '../providers/webview/WebviewProvider';
+import { COMMAND_IDS } from '../constants';
 
 export class CommandManager implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
@@ -14,8 +15,8 @@ export class CommandManager implements vscode.Disposable {
    * Register all extension commands
    */
   public registerCommands(): void {
-    this.registerCommand('ai-content-developer.openWebview', () => this.openWebview());
-    this.registerCommand('ai-content-developer.refresh', () => this.refreshWebview());
+    this.registerCommand(COMMAND_IDS.OPEN_WEBVIEW, () => this.openWebview());
+    this.registerCommand(COMMAND_IDS.REFRESH, () => this.refreshWebview());
 
     this.context.logger.info('Commands registered successfully');
   }

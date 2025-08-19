@@ -1,29 +1,36 @@
 # Content Strategy Decision
 
 ## Your Role
+
 You are a technical documentation specialist determining whether to create new content or update existing content based on this content request and the existing contents of the selected directory.
 
 ## Content Request
+
 {{content_request}}
 
 ## Selected Directory
+
 {{selected_directory}}
 
 ## Existing Content in Directory
+
 {{existing_content}}
 
 ## Task
+
 Analyze the content request and existing documentation to decide whether to CREATE new content or UPDATE existing content.
 
 ## Decision Framework
 
 ### CREATE New Content When:
+
 - No existing content covers the topic (< 40% overlap)
 - Content serves a different audience or purpose
 - New feature/product area not yet documented
 - Merging would make existing content too complex
 
 ### UPDATE Existing Content When:
+
 - Significant topic overlap exists (> 60% overlap)
 - New information enhances/corrects existing docs
 - Same audience and use case
@@ -32,6 +39,7 @@ Analyze the content request and existing documentation to decide whether to CREA
 ## Required Output Format
 
 ### Data Type Definitions:
+
 ```json
 {
   "action": "string - Must be exactly 'CREATE' or 'UPDATE'",
@@ -44,6 +52,7 @@ Analyze the content request and existing documentation to decide whether to CREA
 ```
 
 ### Example Output (CREATE):
+
 ```json
 {
   "action": "CREATE",
@@ -56,6 +65,7 @@ Analyze the content request and existing documentation to decide whether to CREA
 ```
 
 ### Example Output (UPDATE):
+
 ```json
 {
   "action": "UPDATE",
@@ -70,6 +80,7 @@ Analyze the content request and existing documentation to decide whether to CREA
 You MUST respond with ONLY a valid JSON object in this exact format:
 
 ## Important
+
 - Return ONLY the JSON object, no additional text
 - action must be exactly "CREATE" or "UPDATE"
 - targetFile is required when action is "UPDATE"

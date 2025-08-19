@@ -12,8 +12,6 @@ export abstract class BaseService {
    */
   abstract process(input: InputFile): Promise<ProcessingResult>;
 
-
-
   /**
    * Validate input before processing
    */

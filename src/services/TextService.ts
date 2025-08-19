@@ -9,8 +9,6 @@ import { ProcessingResult, InputFile, InputType, ProcessedContent } from '../mod
 export class TextService extends BaseService {
   private readonly supportedExtensions = ['.txt', '.md', '.text', '.markdown'];
 
-
-
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
       this.validateInput(input);

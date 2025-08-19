@@ -11,8 +11,6 @@ export class PDFService extends BaseService {
   private readonly supportedExtensions = ['.pdf'];
   private readonly maxFileSize = 50 * 1024 * 1024; // 50MB limit
 
-
-
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
       this.validateInput(input);
@@ -29,7 +27,9 @@ export class PDFService extends BaseService {
       // Check file size
       const stats = fs.statSync(filePath);
       if (stats.size > this.maxFileSize) {
-        throw new Error(`PDF file too large: ${(stats.size / 1024 / 1024).toFixed(2)}MB (max: 50MB)`);
+        throw new Error(
+          `PDF file too large: ${(stats.size / 1024 / 1024).toFixed(2)}MB (max: 50MB)`
+        );
       }
 
       // Read file buffer

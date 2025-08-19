@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { WebviewProvider } from './providers/WebviewProvider';
+import { WebviewProvider } from './providers/webview/WebviewProvider';
 import { CommandManager } from './commands/CommandManager';
 import { ConfigurationManager } from './config/ConfigurationManager';
 import { Logger } from './utils/Logger';
@@ -17,7 +17,7 @@ let logger: Logger | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   try {
     console.log('AI Content Developer: Starting activation...');
-    
+
     // Initialize logger
     logger = new Logger('AI Content Developer');
     logger.info('Extension is being activated');
@@ -60,12 +60,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
     logger.info('Extension has been activated successfully');
     console.log('AI Content Developer: Activation completed successfully');
-    
+
     // Show success message
     vscode.window.showInformationMessage('AI Content Developer activated successfully!');
   } catch (error) {
     console.error('AI Content Developer: Activation failed:', error);
-    vscode.window.showErrorMessage(`AI Content Developer activation failed: ${error instanceof Error ? error.message : String(error)}`);
+    vscode.window.showErrorMessage(
+      `AI Content Developer activation failed: ${error instanceof Error ? error.message : String(error)}`
+    );
     throw error;
   }
 }

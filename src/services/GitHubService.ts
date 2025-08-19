@@ -1,6 +1,13 @@
 import { Octokit } from '@octokit/rest';
 import { BaseService } from './BaseService';
-import { ProcessingResult, InputFile, InputType, ProcessedContent, GitHubPRInfo } from '../models/InputModels';
+import {
+  ProcessingResult,
+  InputFile,
+  InputType,
+  ProcessedContent,
+  GitHubPRInfo,
+} from '../models/InputModels';
+import { EXTENSION_CONSTANTS, CONFIGURATION_KEYS } from '../constants';
 import * as vscode from 'vscode';
 
 /**
@@ -15,8 +22,6 @@ export class GitHubService extends BaseService {
       auth: this.getGitHubToken(),
     });
   }
-
-
 
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
@@ -125,7 +130,7 @@ export class GitHubService extends BaseService {
     sections.push(`**State:** ${pr.state}`);
     sections.push(`**Created:** ${pr.created_at}`);
     sections.push(`**Updated:** ${pr.updated_at}`);
-    
+
     if (pr.body) {
       sections.push(`\n## Description\n${pr.body}`);
     }
@@ -139,7 +144,7 @@ export class GitHubService extends BaseService {
     // Comments
     if (comments.length > 0) {
       sections.push(`\n## Comments (${comments.length})`);
-      comments.forEach(comment => {
+      comments.forEach((comment) => {
         sections.push(`\n**${comment.user?.login}** (${comment.created_at}):`);
         sections.push(comment.body || '');
       });
@@ -148,7 +153,7 @@ export class GitHubService extends BaseService {
     // Review Comments
     if (reviewComments.length > 0) {
       sections.push(`\n## Review Comments (${reviewComments.length})`);
-      reviewComments.forEach(comment => {
+      reviewComments.forEach((comment) => {
         sections.push(`\n**${comment.user?.login}** on \`${comment.path}\`:`);
         sections.push(comment.body || '');
       });
@@ -156,8 +161,11 @@ export class GitHubService extends BaseService {
 
     // Diff (truncate if too large)
     sections.push(`\n## Diff`);
-    if (diff.length > 50000) {
-      sections.push(diff.substring(0, 50000) + '\n... [Diff truncated due to size]');
+    if (diff.length > EXTENSION_CONSTANTS.MAX_DIFF_LENGTH) {
+      sections.push(
+        diff.substring(0, EXTENSION_CONSTANTS.MAX_DIFF_LENGTH) +
+          '\n... [Diff truncated due to size]'
+      );
     } else {
       sections.push(diff);
     }
@@ -170,9 +178,9 @@ export class GitHubService extends BaseService {
    */
   private getGitHubToken(): string | undefined {
     // Try to get from VS Code configuration
-    const config = vscode.workspace.getConfiguration('ai-content-developer');
-    const token = config.get<string>('githubToken');
-    
+    const config = vscode.workspace.getConfiguration();
+    const token = config.get<string>(CONFIGURATION_KEYS.GITHUB_TOKEN);
+
     if (token) {
       return token;
     }

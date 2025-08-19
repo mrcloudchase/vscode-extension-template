@@ -1,16 +1,25 @@
 /**
- * Export all services
+ * Export all services for centralized access
  */
-export { BaseService } from './BaseService';
-export { InputHandlerService } from './InputHandlerService';
-export { PromptService } from './PromptService';
-export { ContentPatternService } from './ContentPatternService';
-export { ChatParticipantService } from './ChatParticipantService';
-export { WorkflowContextManager } from './WorkflowContextManager';
-export { WordDocumentService } from './WordDocumentService';
-export { PDFService } from './PDFService';
-export { PowerPointService } from './PowerPointService';
-export { GitHubService } from './GitHubService';
-export { URLService } from './URLService';
-export { TextService } from './TextService';
+
+// Core orchestration services
+export { ChatParticipantService } from './chat/ChatParticipantService';
 export { default as CopilotIntegrationService } from './CopilotIntegrationService';
+export { WorkflowContextManager } from './WorkflowContextManager';
+
+// Chat module
+export * from './chat';
+
+// Workflow module
+export * from './workflow';
+
+// Template and content services
+export { PromptService } from './PromptService';
+export { ContentPatternService } from './content/ContentPatternService';
+
+// Content module
+export * from './content';
+
+// File processing services
+export * from './processing';
+export { ServiceFactory } from '../factories/ServiceFactory';

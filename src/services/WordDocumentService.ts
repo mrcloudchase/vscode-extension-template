@@ -10,8 +10,6 @@ import { ProcessingResult, InputFile, InputType, ProcessedContent } from '../mod
 export class WordDocumentService extends BaseService {
   private readonly supportedExtensions = ['.docx', '.doc'];
 
-
-
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
       this.validateInput(input);
@@ -71,7 +69,7 @@ export class WordDocumentService extends BaseService {
 
       // Get HTML output to preserve some formatting
       const result = await mammoth.convertToHtml({ buffer });
-      
+
       // Convert HTML to plain text with basic formatting
       const text = result.value
         .replace(/<p>/g, '\n')

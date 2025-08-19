@@ -116,27 +116,3 @@ export interface SectionPlacementGuidelines {
   forUpdates: string[];
   forCreation: string[];
 }
-
-/**
- * Content pattern selection request
- */
-export interface PatternSelectionRequest {
-  goal: string;
-  audience: string;
-  contentContext: string;
-  suggestedType?: string;
-}
-
-/**
- * Content pattern selection result
- */
-export interface PatternSelectionResult {
-  selectedPattern: ContentPattern;
-  confidence: number;
-  reasoning: string;
-  alternatives: Array<{
-    pattern: ContentPattern;
-    confidence: number;
-    reason: string;
-  }>;
-}

@@ -186,6 +186,8 @@ graph TB
 | `WorkflowContextManager` | Context storage and retrieval | 30-minute TTL, unique ID generation, automatic cleanup |
 | `PromptService` | AI prompt template management | Variable substitution, template loading, metadata extraction |
 | `ContentPatternService` | Microsoft documentation standards | Pattern validation, template enforcement, content structuring |
+| `SequentialWorkflowExecutor` | Workflow coordination | Orchestrates 4-step AI workflow execution |
+| `WorkflowStepExecutor` | Individual step execution | Handles AI prompt execution and response processing |
 
 ### File Processing Services
 
@@ -227,7 +229,7 @@ src/content-standards/
 3. **Webview Interface**: User uploads files and defines content goals
 4. **Context Storage**: Processed content stored with unique context ID
 5. **Chat Participant Launch**: Automatic handoff to @content-creator in VS Code Chat
-6. **Sequential AI Workflow**: 5-step deterministic process executes
+6. **Sequential AI Workflow**: 4-step streamlined process executes
 7. **Document Generation**: Professional content created following Microsoft standards
 8. **Context Cleanup**: Automatic removal of expired contexts
 

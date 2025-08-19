@@ -2,15 +2,14 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { BaseService } from './BaseService';
 import { ProcessingResult, InputFile, InputType, ProcessedContent } from '../models/InputModels';
+import { EXTENSION_CONSTANTS } from '../constants';
 
 /**
  * Service for fetching and processing web URLs
  */
 export class URLService extends BaseService {
-  private readonly timeout = 30000; // 30 seconds
-  private readonly maxContentLength = 10 * 1024 * 1024; // 10MB
-
-  
+  private readonly timeout = EXTENSION_CONSTANTS.URL_FETCH_TIMEOUT_MS;
+  private readonly maxContentLength = EXTENSION_CONSTANTS.MAX_URL_CONTENT_LENGTH;
 
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
@@ -23,7 +22,7 @@ export class URLService extends BaseService {
         maxContentLength: this.maxContentLength,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; VSCodeExtension/1.0)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
         responseType: 'text',
       });
@@ -63,7 +62,7 @@ export class URLService extends BaseService {
       };
     } catch (error) {
       this.logError(`Failed to process URL: ${input.uri}`, error);
-      
+
       if (axios.isAxiosError(error)) {
         if (error.response) {
           return {
@@ -77,7 +76,7 @@ export class URLService extends BaseService {
           };
         }
       }
-      
+
       return {
         success: false,
         error: `Failed to process URL: ${error instanceof Error ? error.message : String(error)}`,
@@ -134,15 +133,15 @@ export class URLService extends BaseService {
 
     // Compile the content
     const sections: string[] = [];
-    
+
     if (title) {
       sections.push(`# ${title}\n`);
     }
-    
+
     if (description) {
       sections.push(`Description: ${description}\n`);
     }
-    
+
     sections.push(cleanText);
 
     return sections.join('\n');

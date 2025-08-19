@@ -39,15 +39,18 @@ export class PromptService {
    */
   private loadAllPrompts(): void {
     try {
-      const categories = fs.readdirSync(this.promptsPath, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory())
-        .map(dirent => dirent.name);
+      const categories = fs
+        .readdirSync(this.promptsPath, { withFileTypes: true })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => dirent.name);
 
       for (const category of categories) {
         this.loadCategoryPrompts(category);
       }
 
-      this.context.logger.info(`Loaded ${this.prompts.size} prompts from ${categories.length} categories`);
+      this.context.logger.info(
+        `Loaded ${this.prompts.size} prompts from ${categories.length} categories`
+      );
     } catch (error) {
       this.context.logger.error('Failed to load prompts:', error);
     }
@@ -58,22 +61,21 @@ export class PromptService {
    */
   private loadCategoryPrompts(category: string): void {
     const categoryPath = path.join(this.promptsPath, category);
-    
+
     try {
-      const files = fs.readdirSync(categoryPath)
-        .filter(file => file.endsWith('.md'));
+      const files = fs.readdirSync(categoryPath).filter((file) => file.endsWith('.md'));
 
       for (const file of files) {
         const promptId = `${category}/${path.basename(file, '.md')}`;
         const promptPath = path.join(categoryPath, file);
-        
+
         try {
           const content = fs.readFileSync(promptPath, 'utf-8');
           const metadata = this.extractMetadata(promptId, category, content);
-          
+
           this.prompts.set(promptId, {
             metadata,
-            content
+            content,
           });
         } catch (error) {
           this.context.logger.error(`Failed to load prompt ${promptId}:`, error);
@@ -84,21 +86,19 @@ export class PromptService {
     }
   }
 
-
-
   /**
    * Extract metadata from prompt content
    */
   private extractMetadata(id: string, category: string, content: string): PromptMetadata {
     const lines = content.split('\n');
-    const titleLine = lines.find(line => line.startsWith('# '));
+    const titleLine = lines.find((line) => line.startsWith('# '));
     const name = titleLine ? titleLine.substring(2).trim() : id;
-    
+
     // Extract variables (placeholders like {{variable}})
     const variableRegex = /\{\{(\w+)\}\}/g;
     const variables: string[] = [];
     let match;
-    
+
     while ((match = variableRegex.exec(content)) !== null) {
       if (!variables.includes(match[1])) {
         variables.push(match[1]);
@@ -110,7 +110,7 @@ export class PromptService {
       category,
       name,
       description: `${category} prompt: ${name}`,
-      variables
+      variables,
     };
   }
 
@@ -125,8 +125,9 @@ export class PromptService {
    * Get all prompts in a category
    */
   public getPromptsByCategory(category: string): PromptTemplate[] {
-    return Array.from(this.prompts.values())
-      .filter(prompt => prompt.metadata.category === category);
+    return Array.from(this.prompts.values()).filter(
+      (prompt) => prompt.metadata.category === category
+    );
   }
 
   /**
@@ -134,7 +135,7 @@ export class PromptService {
    */
   public getCategories(): string[] {
     const categories = new Set<string>();
-    this.prompts.forEach(prompt => categories.add(prompt.metadata.category));
+    this.prompts.forEach((prompt) => categories.add(prompt.metadata.category));
     return Array.from(categories);
   }
 
@@ -151,7 +152,7 @@ export class PromptService {
    */
   public renderPrompt(promptIdOrTemplate: string, variables: Record<string, string>): string {
     let template: string;
-    
+
     // Check if it's a prompt ID (contains slash) or a template (contains {{)
     if (promptIdOrTemplate.includes('/') && !promptIdOrTemplate.includes('{{')) {
       // It's a prompt ID
@@ -164,7 +165,7 @@ export class PromptService {
       // It's a template string
       template = promptIdOrTemplate;
     }
-    
+
     // Replace all variables
     for (const [key, value] of Object.entries(variables)) {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
@@ -183,7 +184,10 @@ export class PromptService {
   /**
    * Validate that all required variables are provided
    */
-  public validateVariables(promptId: string, variables: Record<string, string>): {
+  public validateVariables(
+    promptId: string,
+    variables: Record<string, string>
+  ): {
     valid: boolean;
     missing: string[];
     extra: string[];
@@ -195,14 +199,14 @@ export class PromptService {
 
     const required = new Set(prompt.metadata.variables);
     const provided = new Set(Object.keys(variables));
-    
-    const missing = Array.from(required).filter(v => !provided.has(v));
-    const extra = Array.from(provided).filter(v => !required.has(v));
+
+    const missing = Array.from(required).filter((v) => !provided.has(v));
+    const extra = Array.from(provided).filter((v) => !required.has(v));
 
     return {
       valid: missing.length === 0,
       missing,
-      extra
+      extra,
     };
   }
 
@@ -219,10 +223,11 @@ export class PromptService {
    */
   public searchPrompts(query: string): PromptTemplate[] {
     const lowerQuery = query.toLowerCase();
-    return Array.from(this.prompts.values()).filter(prompt => 
-      prompt.metadata.name.toLowerCase().includes(lowerQuery) ||
-      prompt.metadata.description.toLowerCase().includes(lowerQuery) ||
-      prompt.metadata.category.toLowerCase().includes(lowerQuery)
+    return Array.from(this.prompts.values()).filter(
+      (prompt) =>
+        prompt.metadata.name.toLowerCase().includes(lowerQuery) ||
+        prompt.metadata.description.toLowerCase().includes(lowerQuery) ||
+        prompt.metadata.category.toLowerCase().includes(lowerQuery)
     );
   }
 }

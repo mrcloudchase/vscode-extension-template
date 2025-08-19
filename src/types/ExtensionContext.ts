@@ -22,22 +22,12 @@ export enum MessageType {
   SHOW_MESSAGE = 'showMessage',
   PROCESSING_STATUS = 'processingStatus',
   COPILOT_RESPONSE = 'copilotResponse',
-  WORKFLOW_STEP_COMPLETE = 'workflowStepComplete',
-  WORKFLOW_RESULT = 'workflowResult',
-  CONTENT_CREATION_PROGRESS = 'contentCreationProgress',
-  CONTENT_CREATION_RESULT = 'contentCreationResult',
-  
+
   // From webview to extension
-  REQUEST_DATA = 'requestData',
-  SAVE_DATA = 'saveData',
-  EXECUTE_COMMAND = 'executeCommand',
   LOG_MESSAGE = 'logMessage',
   READY = 'ready',
   PROCESS_INPUTS = 'processInputs',
   SELECT_FILES = 'selectFiles',
-  EXECUTE_WORKFLOW = 'executeWorkflow',
-  GET_WORKFLOWS = 'getWorkflows',
-  CREATE_CONTENT = 'createContent',
 }
 
 /**

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ExtensionContext } from '../types/ExtensionContext';
 import { ProcessedContent, InputFile } from '../models/InputModels';
 import { nanoid } from 'nanoid';
+import { EXTENSION_CONSTANTS } from '../constants';
 
 /**
  * Context data stored for workflow handoff between webview and chat participant
@@ -29,21 +30,21 @@ export interface WorkflowContext {
  */
 export class WorkflowContextManager {
   private contexts = new Map<string, WorkflowContext>();
-  private readonly CONTEXT_TTL = 30 * 60 * 1000; // 30 minutes
+  private readonly CONTEXT_TTL = EXTENSION_CONSTANTS.CONTEXT_TTL_MS;
   private cleanupInterval: NodeJS.Timeout;
 
   constructor(private context: ExtensionContext) {
     // Start periodic cleanup of expired contexts
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredContexts();
-    }, 5 * 60 * 1000); // Check every 5 minutes
+    }, EXTENSION_CONSTANTS.CONTEXT_CLEANUP_INTERVAL_MS);
 
     // Cleanup on extension deactivation
     this.context.vscodeContext.subscriptions.push({
       dispose: () => {
         clearInterval(this.cleanupInterval);
         this.contexts.clear();
-      }
+      },
     });
   }
 
@@ -58,7 +59,7 @@ export class WorkflowContextManager {
       [key: string]: any;
     } = {}
   ): string {
-    const contextId = nanoid(12); // Short, URL-safe unique ID
+    const contextId = nanoid(EXTENSION_CONSTANTS.CONTEXT_ID_LENGTH);
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
 
     const workflowContext: WorkflowContext = {
@@ -69,18 +70,20 @@ export class WorkflowContextManager {
       originalInputs,
       options: {
         ...options,
-        workspaceRoot
+        workspaceRoot,
       },
       metadata: {
         userAgent: 'VSCode Extension',
         vscodeVersion: vscode.version,
-        extensionVersion: this.context.vscodeContext.extension.packageJSON.version || '0.0.1'
-      }
+        extensionVersion: this.context.vscodeContext.extension.packageJSON.version || '0.0.1',
+      },
     };
 
     this.contexts.set(contextId, workflowContext);
-    
-    this.context.logger.info(`Stored workflow context: ${contextId} with ${processedFiles.length} files`);
+
+    this.context.logger.info(
+      `Stored workflow context: ${contextId} with ${processedFiles.length} files`
+    );
     this.context.logger.debug(`Context goal: ${goal}`);
 
     return contextId;
@@ -91,7 +94,7 @@ export class WorkflowContextManager {
    */
   public retrieveContext(contextId: string): WorkflowContext | undefined {
     const context = this.contexts.get(contextId);
-    
+
     if (!context) {
       this.context.logger.warn(`Context not found: ${contextId}`);
       return undefined;
@@ -135,9 +138,8 @@ export class WorkflowContextManager {
 
     const age = Math.round((Date.now() - context.timestamp) / 1000);
     const fileCount = context.processedFiles.length;
-    const goalPreview = context.goal.length > 50 
-      ? context.goal.substring(0, 50) + '...' 
-      : context.goal;
+    const goalPreview =
+      context.goal.length > 50 ? context.goal.substring(0, 50) + '...' : context.goal;
 
     return `Context ${contextId}: "${goalPreview}" (${fileCount} files, ${age}s ago)`;
   }
@@ -175,7 +177,9 @@ export class WorkflowContextManager {
   /**
    * Parse context ID from chat prompt
    */
-  public parseContextFromPrompt(prompt: string): { contextId: string; remainingPrompt: string } | null {
+  public parseContextFromPrompt(
+    prompt: string
+  ): { contextId: string; remainingPrompt: string } | null {
     const contextMatch = prompt.match(/context:([a-zA-Z0-9_-]+)/);
     if (!contextMatch) return null;
 
@@ -202,7 +206,7 @@ export class WorkflowContextManager {
     }
 
     const totalFiles = contexts.reduce((sum, ctx) => sum + ctx.processedFiles.length, 0);
-    const ages = contexts.map(ctx => now - ctx.timestamp);
+    const ages = contexts.map((ctx) => now - ctx.timestamp);
     const averageAge = ages.reduce((sum, age) => sum + age, 0) / ages.length;
     const oldestContext = Math.max(...ages);
 
@@ -210,7 +214,7 @@ export class WorkflowContextManager {
       totalContexts: contexts.length,
       totalFiles,
       averageAge: Math.round(averageAge / 1000), // Convert to seconds
-      oldestContext: Math.round(oldestContext / 1000)
+      oldestContext: Math.round(oldestContext / 1000),
     };
   }
 }

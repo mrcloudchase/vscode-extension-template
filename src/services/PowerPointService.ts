@@ -12,8 +12,6 @@ const xml2js = require('xml2js');
 export class PowerPointService extends BaseService {
   private readonly supportedExtensions = ['.pptx', '.ppt'];
 
-
-
   async process(input: InputFile): Promise<ProcessingResult> {
     try {
       this.validateInput(input);
@@ -71,8 +69,9 @@ export class PowerPointService extends BaseService {
       const parser = new xml2js.Parser({ explicitArray: false });
 
       // Process slides
-      const slideEntries = zipEntries.filter((entry: any) =>
-        entry.entryName.startsWith('ppt/slides/slide') && entry.entryName.endsWith('.xml')
+      const slideEntries = zipEntries.filter(
+        (entry: any) =>
+          entry.entryName.startsWith('ppt/slides/slide') && entry.entryName.endsWith('.xml')
       );
 
       // Sort slides by number
@@ -92,8 +91,9 @@ export class PowerPointService extends BaseService {
       }
 
       // Also extract notes if available
-      const notesEntries = zipEntries.filter((entry: any) =>
-        entry.entryName.startsWith('ppt/notesSlides/') && entry.entryName.endsWith('.xml')
+      const notesEntries = zipEntries.filter(
+        (entry: any) =>
+          entry.entryName.startsWith('ppt/notesSlides/') && entry.entryName.endsWith('.xml')
       );
 
       for (const entry of notesEntries) {
@@ -107,7 +107,9 @@ export class PowerPointService extends BaseService {
 
       return slideTexts.join('\n\n---\n\n');
     } catch (error) {
-      throw new Error(`Failed to extract text from PPTX: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to extract text from PPTX: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -141,7 +143,7 @@ export class PowerPointService extends BaseService {
     };
 
     extractText(xmlObj);
-    return texts.filter(t => t.trim()).join(' ');
+    return texts.filter((t) => t.trim()).join(' ');
   }
 
   /**
@@ -151,20 +153,20 @@ export class PowerPointService extends BaseService {
     try {
       const uri = vscode.Uri.parse(input.uri);
       const filePath = uri.fsPath;
-      
+
       if (!filePath.endsWith('.pptx')) {
         return { error: 'Only .pptx format supported for metadata extraction' };
       }
 
       const zip = new AdmZip(filePath);
       const parser = new xml2js.Parser({ explicitArray: false });
-      
+
       // Try to get core properties
       const coreEntry = zip.getEntry('docProps/core.xml');
       if (coreEntry) {
         const coreXml = zip.readAsText(coreEntry);
         const coreData = await parser.parseStringPromise(coreXml);
-        
+
         return {
           title: coreData['cp:coreProperties']?.['dc:title'] || '',
           creator: coreData['cp:coreProperties']?.['dc:creator'] || '',
@@ -173,7 +175,7 @@ export class PowerPointService extends BaseService {
           modified: coreData['cp:coreProperties']?.['dcterms:modified'] || '',
         };
       }
-      
+
       return {};
     } catch (error) {
       this.logError('Failed to get PowerPoint metadata', error);

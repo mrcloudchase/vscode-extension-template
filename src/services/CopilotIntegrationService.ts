@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { ExtensionContext } from '../types/ExtensionContext';
-import { ChatParticipantService } from './ChatParticipantService';
+import { ChatParticipantService } from './chat/ChatParticipantService';
 import { InputFile, ProcessedContent } from '../models/InputModels';
 import { OrchestrationResult } from '../models/OrchestrationModels';
 import { InputHandlerService } from './InputHandlerService';
 import { WorkflowContextManager } from './WorkflowContextManager';
+import { COMMAND_IDS } from '../constants';
 
 /**
  * Main service for integrating with VS Code Chat Participant API
@@ -20,7 +21,7 @@ export default class CopilotIntegrationService {
     this.contextManager = new WorkflowContextManager(context);
     this.chatParticipant = new ChatParticipantService(context, this.contextManager);
     this.inputHandler = new InputHandlerService(context);
-    
+
     // Register the chat participant on initialization
     this.chatParticipant.registerChatParticipant();
   }
@@ -38,7 +39,7 @@ export default class CopilotIntegrationService {
   ): Promise<OrchestrationResult> {
     try {
       this.context.logger.info('Starting content creation workflow from webview');
-      
+
       // Process input files first
       if (inputs && inputs.length > 0) {
         options?.onProgress?.('Processing', 'Processing input files...');
@@ -58,11 +59,11 @@ export default class CopilotIntegrationService {
 
       // Generate chat query with context ID
       const chatQuery = this.contextManager.generateChatQuery(contextId);
-      
+
       options?.onProgress?.('Launching', 'Opening chat participant...');
-      
-      await vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: chatQuery
+
+      await vscode.commands.executeCommand(COMMAND_IDS.OPEN_CHAT, {
+        query: chatQuery,
       });
 
       // Return success indicating that the chat workflow has been initiated
@@ -70,16 +71,15 @@ export default class CopilotIntegrationService {
         success: true,
         action: 'INITIATED',
         steps: {},
-        message: `Chat participant launched with context ${contextId}. The workflow will continue in the chat interface with full access to your files and VS Code workspace.`
+        message: `Chat participant launched with context ${contextId}. The workflow will continue in the chat interface with full access to your files and VS Code workspace.`,
       };
-
     } catch (error) {
       this.context.logger.error('Failed to initiate content creation workflow:', error);
       return {
         success: false,
         action: 'FAILED',
         steps: {},
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -104,18 +104,5 @@ export default class CopilotIntegrationService {
    */
   public getChatParticipantStatus(): { isSupported: boolean; isRegistered: boolean } {
     return this.chatParticipant.getParticipantStatus();
-  }
-
-  /**
-   * Legacy method - now redirects to new workflow
-   * @deprecated Use createNewContent instead
-   */
-  public async sendToCopilot(request: any): Promise<any> {
-    this.context.logger.warn('sendToCopilot is deprecated, redirecting to new workflow');
-    
-    const contentRequest = request.message || request.prompt || 'Create documentation';
-    const inputs = request.inputs || [];
-    
-    return this.createNewContent(contentRequest, inputs);
   }
 }

@@ -33,19 +33,6 @@ export interface ProcessingResult {
   error?: string;
 }
 
-export interface ChatRequest {
-  goal: string;
-  inputs: InputFile[];
-  processedContents?: ProcessedContent[];
-  context?: string;
-}
-
-export interface ChatResponse {
-  response: string;
-  sources?: string[];
-  timestamp: Date;
-}
-
 export interface GitHubPRInfo {
   owner: string;
   repo: string;

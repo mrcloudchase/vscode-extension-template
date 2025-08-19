@@ -5,15 +5,11 @@ suite('AI Content Developer Test Suite', () => {
   void vscode.window.showInformationMessage('Start AI Content Developer tests.');
 
   test('Extension should be present', () => {
-    assert.ok(
-      vscode.extensions.getExtension('doveychase.ai-content-developer')
-    );
+    assert.ok(vscode.extensions.getExtension('doveychase.ai-content-developer'));
   });
 
   test('Should activate extension', async () => {
-    const ext = vscode.extensions.getExtension(
-      'your-publisher-name.ai-content-developer'
-    );
+    const ext = vscode.extensions.getExtension('your-publisher-name.ai-content-developer');
     assert.ok(ext);
     await ext.activate();
     assert.ok(ext.isActive);
@@ -22,10 +18,7 @@ suite('AI Content Developer Test Suite', () => {
   test('Should register all commands', async () => {
     const commands = await vscode.commands.getCommands();
 
-    const expectedCommands = [
-      'ai-content-developer.openWebview',
-      'ai-content-developer.refresh',
-    ];
+    const expectedCommands = ['ai-content-developer.openWebview', 'ai-content-developer.refresh'];
 
     expectedCommands.forEach((command) => {
       assert.ok(commands.includes(command), `Command ${command} not found`);
@@ -83,7 +76,7 @@ suite('Configuration Manager Test Suite', () => {
 
   test('Should have GitHub token configuration', () => {
     const config = vscode.workspace.getConfiguration('ai-content-developer');
-    
+
     // Should have githubToken setting (even if empty)
     assert.ok(config.inspect('githubToken'));
   });

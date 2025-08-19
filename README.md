@@ -121,13 +121,12 @@ ai-content-developer/
 
 ### Sequential Orchestration Steps
 
-The extension uses a deterministic 5-step AI workflow:
+The extension uses a streamlined 4-step AI workflow:
 
-1. **🔍 Repository Analysis**: AI analyzes your workspace structure and existing documentation
-2. **📁 Directory Selection**: AI selects the optimal location for your new content
-3. **🎯 Content Strategy**: AI decides whether to create new content or update existing files
-4. **🎨 Pattern Selection**: AI chooses the appropriate documentation pattern (Overview, Quickstart, How-to, Tutorial, Concept)
-5. **✍️ Content Generation**: AI creates professional documentation following Microsoft standards
+1. **📁 Directory Selection**: AI explores your workspace to find the optimal location for new content
+2. **🎯 Content Strategy**: AI decides whether to create new content or update existing files
+3. **🎨 Pattern Selection**: AI chooses the appropriate documentation pattern (Overview, Quickstart, How-to, Tutorial, Concept)
+4. **✍️ Content Generation**: AI creates professional documentation following Microsoft standards
 
 ### Supported Input Types
 

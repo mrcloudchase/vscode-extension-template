@@ -7,7 +7,6 @@
     
     // State management
     let state = {
-        data: null,
         theme: 'light',
         inputs: [],
         goal: ''
@@ -24,9 +23,6 @@
         COPILOT_RESPONSE: 'copilotResponse',
         
         // From webview to extension
-        REQUEST_DATA: 'requestData',
-        SAVE_DATA: 'saveData',
-        EXECUTE_COMMAND: 'executeCommand',
         LOG_MESSAGE: 'logMessage',
         READY: 'ready',
         PROCESS_INPUTS: 'processInputs',
@@ -62,24 +58,10 @@
      * Set up event listeners
      */
     function setupEventListeners() {
-        // Original button event listeners
+        // Header button event listeners
         const refreshBtn = document.getElementById('refresh-btn');
-        const settingsBtn = document.getElementById('settings-btn');
-        const documentationLink = document.getElementById('documentation-link');
-
         if (refreshBtn) {
             refreshBtn.addEventListener('click', handleRefresh);
-        }
-
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', handleSettings);
-        }
-
-        if (documentationLink) {
-            documentationLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                handleOpenDocumentation();
-            });
         }
 
         // New input processing event listeners
@@ -213,135 +195,23 @@
      */
     function handleRefresh() {
         log('info', 'Refresh button clicked');
-        
-        // Clear current data
-        state.data = null;
-        updateUI();
-        
-        // Request fresh data
-        sendMessage({
-            type: MessageType.REQUEST_DATA,
-            id: generateId()
-        });
-    }
-
-    /**
-     * Handle settings button click
-     */
-    function handleSettings() {
-        log('info', 'Settings button clicked');
-        
-        // Execute VS Code command to open settings
-        sendMessage({
-            type: MessageType.EXECUTE_COMMAND,
-            payload: {
-                command: 'workbench.action.openSettings',
-                args: ['ai-content-developer']
-            }
-        });
-    }
-
-    /**
-     * Handle load data button click
-     */
-    function handleLoadData() {
-        log('info', 'Load data button clicked');
-        
-        // Show loading state
-        const loadDataBtn = document.getElementById('load-data-btn');
-        if (loadDataBtn) {
-            loadDataBtn.classList.add('loading');
-            loadDataBtn.textContent = 'Loading...';
-        }
-        
-        // Request data from extension
-        sendMessage({
-            type: MessageType.REQUEST_DATA,
-            id: generateId()
-        });
-    }
-
-    /**
-     * Handle save data button click
-     */
-    function handleSaveData() {
-        log('info', 'Save data button clicked');
-        
-        // Example data to save
-        const dataToSave = {
-            timestamp: new Date().toISOString(),
-            content: 'Sample data from webview',
-            state: state
-        };
-        
-        // Send save request to extension
-        sendMessage({
-            type: MessageType.SAVE_DATA,
-            payload: dataToSave
-        });
-    }
-
-    /**
-     * Handle show notification button click
-     */
-    function handleShowNotification() {
-        log('info', 'Show notification button clicked');
-        
-        // Show a notification through VS Code
-        sendMessage({
-            type: MessageType.EXECUTE_COMMAND,
-            payload: {
-                command: 'ai-content-developer.showNotification',
-                args: ['Hello from the webview!']
-            }
-        });
-        
-        // Also show local message
-        showLocalMessage('Notification sent to VS Code!', 'success');
-    }
-
-    /**
-     * Handle open documentation link
-     */
-    function handleOpenDocumentation() {
-        log('info', 'Documentation link clicked');
-        
-        // Open external link
-        sendMessage({
-            type: MessageType.EXECUTE_COMMAND,
-            payload: {
-                command: 'vscode.open',
-                args: ['https://code.visualstudio.com/api/extension-guides/webview']
-            }
-        });
+        location.reload();
     }
 
     /**
      * Handle content update from extension
      */
     function handleUpdateContent(payload) {
-        log('info', 'Content updated', payload);
-        
-        state.data = payload;
-        
-        // Update UI
-        const dataDisplay = document.getElementById('data-display');
-        const dataContent = document.getElementById('data-content');
-        
-        if (dataDisplay && dataContent) {
-            dataDisplay.classList.remove('hidden');
-            dataDisplay.classList.add('fade-in');
-            dataContent.textContent = JSON.stringify(payload, null, 2);
+        if (payload.files) {
+            // Add files to inputs
+            payload.files.forEach(file => {
+                state.inputs.push(file);
+            });
+            
+            updateInputList();
+            updateProcessButton();
         }
-        
-        // Reset load button state
-        const loadDataBtn = document.getElementById('load-data-btn');
-        if (loadDataBtn) {
-            loadDataBtn.classList.remove('loading');
-            loadDataBtn.textContent = 'Load Data';
-        }
-        
-        // Save state
+        // Save state for any content updates
         vscode.setState(state);
     }
 
@@ -424,19 +294,13 @@
      * Update UI based on state
      */
     function updateUI() {
-        if (state.data) {
-            const dataDisplay = document.getElementById('data-display');
-            const dataContent = document.getElementById('data-content');
-            
-            if (dataDisplay && dataContent) {
-                dataDisplay.classList.remove('hidden');
-                dataContent.textContent = JSON.stringify(state.data, null, 2);
-            }
-        }
-        
         if (state.theme) {
             document.body.className = `theme-${state.theme}`;
         }
+        
+        // Update input list and process button
+        updateInputList();
+        updateProcessButton();
     }
 
     /**
@@ -703,39 +567,6 @@
             
             // Scroll to response
             responseSection.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
-    /**
-     * Handle files from extension
-     */
-    function handleUpdateContent(payload) {
-        if (payload.files) {
-            // Add files to inputs
-            payload.files.forEach(file => {
-                state.inputs.push(file);
-            });
-            
-            updateInputList();
-            updateProcessButton();
-        } else {
-            // Original update content handler
-            log('info', 'Content updated', payload);
-            
-            state.data = payload;
-            
-            // Update UI
-            const dataDisplay = document.getElementById('data-display');
-            const dataContent = document.getElementById('data-content');
-            
-            if (dataDisplay && dataContent) {
-                dataDisplay.classList.remove('hidden');
-                dataDisplay.classList.add('fade-in');
-                dataContent.textContent = JSON.stringify(payload, null, 2);
-            }
-            
-            // Save state
-            vscode.setState(state);
         }
     }
 })();
