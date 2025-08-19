@@ -236,7 +236,7 @@
             type: MessageType.EXECUTE_COMMAND,
             payload: {
                 command: 'workbench.action.openSettings',
-                args: ['vscode-webview-extension']
+                args: ['ai-content-developer']
             }
         });
     }
@@ -291,7 +291,7 @@
         sendMessage({
             type: MessageType.EXECUTE_COMMAND,
             payload: {
-                command: 'vscode-webview-extension.showNotification',
+                command: 'ai-content-developer.showNotification',
                 args: ['Hello from the webview!']
             }
         });

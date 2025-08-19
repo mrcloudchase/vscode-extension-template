@@ -1,31 +1,58 @@
-# VSCode WebView Extension Template 🚀
+# AI Content Developer 🤖
 
-A modern, production-ready template for building Visual Studio Code extensions with WebView support. This template provides a solid foundation with TypeScript, best practices, and modular architecture.
+A sophisticated VS Code extension that creates professional technical documentation using AI-powered workflows with the VS Code Chat Participant API. Transform your files and ideas into structured, professional documentation with intelligent content generation.
 
 ## ✨ Features
 
-- **TypeScript Support**: Full TypeScript support for type safety and better development experience
-- **WebView Integration**: Complete WebView setup with bi-directional communication
-- **Modular Architecture**: Clean separation of concerns with organized file structure
-- **Modern Build System**: Webpack configuration for optimized bundling
-- **Development Tools**: ESLint, Prettier, and VS Code debugging setup
-- **Theme Support**: Automatic adaptation to VS Code themes (light/dark)
-- **Configuration Management**: Built-in settings and configuration handling
-- **Logging System**: Comprehensive logging utility for debugging
-- **Message Protocol**: Type-safe message passing between extension and webview
+- **AI-Powered Documentation**: Create professional technical docs using VS Code's Chat Participant API
+- **Multi-Format Input Support**: Process Word docs, PDFs, PowerPoint, text files, URLs, and GitHub PRs
+- **Sequential Workflow Orchestration**: Deterministic 5-step AI workflow for optimal content creation
+- **Intelligent Content Strategy**: AI decides whether to create new content or update existing files
+- **Microsoft Documentation Standards**: Follows official content patterns (Overview, Quickstart, How-to, Tutorial, Concept)
+- **Real-time Progress Streaming**: Live updates during AI processing with interactive chat interface
+- **Smart Repository Analysis**: Analyzes your workspace to select optimal content placement
+- **Dual Interface Design**: Webview for file uploads + Chat Participant for AI workflow execution
+- **Context Handoff System**: Seamless transition from webview to chat with preserved context
 
 ## 📁 Project Structure
 
 ```
-vscode-extension-template/
+ai-content-developer/
 ├── src/                      # Source code
-│   ├── extension.ts          # Extension entry point
+│   ├── extension.ts          # Extension entry point & activation
 │   ├── commands/             # Command handlers
 │   │   └── CommandManager.ts
 │   ├── config/               # Configuration management
 │   │   └── ConfigurationManager.ts
-│   ├── providers/            # WebView and other providers
+│   ├── providers/            # WebView and UI providers
 │   │   └── WebviewProvider.ts
+│   ├── services/             # Core business logic
+│   │   ├── ChatParticipantService.ts      # Main AI workflow orchestrator
+│   │   ├── CopilotIntegrationService.ts   # Chat participant integration
+│   │   ├── InputHandlerService.ts         # File processing router
+│   │   ├── WorkflowContextManager.ts      # Context handoff management
+│   │   ├── PromptService.ts               # Template management
+│   │   ├── ContentPatternService.ts       # Documentation standards
+│   │   ├── BaseService.ts                 # Abstract service base
+│   │   ├── WordDocumentService.ts         # Word document processing
+│   │   ├── PDFService.ts                  # PDF processing
+│   │   ├── PowerPointService.ts           # PowerPoint processing
+│   │   ├── TextService.ts                 # Text file processing
+│   │   ├── URLService.ts                  # Web content processing
+│   │   └── GitHubService.ts               # GitHub PR processing
+│   ├── models/               # Data models and schemas
+│   │   ├── InputModels.ts                 # Input processing models
+│   │   ├── OrchestrationModels.ts         # Workflow step schemas
+│   │   └── ContentPattern.ts              # Content pattern definitions
+│   ├── prompts/              # AI prompt templates
+│   │   └── orchestration/                 # Sequential workflow prompts
+│   │       ├── 01-directory-selection.md
+│   │       ├── 02-content-strategy.md
+│   │       ├── 03-pattern-selection.md
+│   │       ├── 04-content-generation.md
+│   │       └── 05-content-update.md
+│   ├── content-standards/    # Documentation standards
+│   │   └── content_standards.json         # Microsoft docs standards
 │   ├── types/                # TypeScript type definitions
 │   │   └── ExtensionContext.ts
 │   └── utils/                # Utility functions
@@ -35,13 +62,14 @@ vscode-extension-template/
 │   ├── webview.css          # WebView styles
 │   ├── codicon.css          # VS Code icons
 │   └── icon*.svg            # Extension icons
+├── docs/                     # Documentation
+│   ├── architecture.md      # System architecture
+│   ├── dataflow.md          # Data flow documentation
+│   └── README.md            # Documentation overview
 ├── dist/                     # Compiled output (generated)
-├── .vscode/                  # VS Code workspace settings
 ├── package.json              # Extension manifest
 ├── tsconfig.json            # TypeScript configuration
-├── webpack.config.js        # Webpack configuration
-├── .eslintrc.json           # ESLint configuration
-└── .prettierrc.json         # Prettier configuration
+└── webpack.config.js        # Webpack configuration
 ```
 
 ## 🚀 Getting Started
@@ -49,15 +77,16 @@ vscode-extension-template/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v16 or higher)
-- [Visual Studio Code](https://code.visualstudio.com/)
+- [Visual Studio Code](https://code.visualstudio.com/) v1.90.0 or higher
+- [GitHub Copilot](https://copilot.github.com/) subscription (for AI functionality)
 - [Git](https://git-scm.com/)
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/vscode-extension-template.git
-   cd vscode-extension-template
+   git clone https://github.com/doveychase/ai-content-developer.git
+   cd ai-content-developer
    ```
 
 2. **Install dependencies:**
@@ -70,77 +99,72 @@ vscode-extension-template/
    npm run compile
    ```
 
-### Development
+### Usage
 
-1. **Open in VS Code:**
-   ```bash
-   code .
-   ```
+1. **Install the extension** in VS Code (development mode):
+   - Press `F5` to open a new VS Code window with the extension loaded
 
-2. **Start watching for changes:**
-   ```bash
-   npm run watch
-   ```
+2. **Open the AI Content Developer:**
+   - Run command: `AI Content Developer: Open AI Content Developer` from Command Palette (`Ctrl+Shift+P`)
 
-3. **Launch the extension:**
-   - Press `F5` to open a new VS Code window with your extension loaded
-   - Run the command `WebView Extension: Open WebView` from the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+3. **Create documentation:**
+   - **Upload source materials**: Word docs, PDFs, URLs, GitHub PRs
+   - **Describe your goal**: What documentation you need
+   - **Click "Create Documentation"**: Launches AI workflow in Chat
 
-## 📝 Customization Guide
+4. **Follow the AI workflow:**
+   - The `@content-creator` chat participant will guide you through the process
+   - Watch real-time progress as AI analyzes your repository and creates content
+   - Review and open the generated documentation files
 
-### 1. Update Extension Metadata
+## 🤖 AI Workflow Process
 
-Edit `package.json`:
+### Sequential Orchestration Steps
+
+The extension uses a deterministic 5-step AI workflow:
+
+1. **🔍 Repository Analysis**: AI analyzes your workspace structure and existing documentation
+2. **📁 Directory Selection**: AI selects the optimal location for your new content
+3. **🎯 Content Strategy**: AI decides whether to create new content or update existing files
+4. **🎨 Pattern Selection**: AI chooses the appropriate documentation pattern (Overview, Quickstart, How-to, Tutorial, Concept)
+5. **✍️ Content Generation**: AI creates professional documentation following Microsoft standards
+
+### Supported Input Types
+
+- **📄 Word Documents** (`.docx`, `.doc`) - Extracted using mammoth.js
+- **📑 PDF Files** (`.pdf`) - Parsed using pdf-parse
+- **📊 PowerPoint** (`.pptx`, `.ppt`) - XML content extraction
+- **📝 Text Files** (`.txt`, `.md`) - Direct text processing
+- **🌐 Web URLs** - Content scraped using cheerio
+- **🐙 GitHub PRs** - Full PR data via Octokit API
+
+### Content Patterns
+
+Based on Microsoft documentation standards:
+- **Overview**: Service/product introductions
+- **Concept**: Deep technical explanations
+- **Quickstart**: < 10 minute implementations
+- **How-to**: Step-by-step procedures
+- **Tutorial**: Guided learning experiences
+
+## ⚙️ Configuration
+
+### Optional Settings
+
 ```json
 {
-  "name": "your-extension-name",
-  "displayName": "Your Extension Display Name",
-  "description": "Your extension description",
-  "publisher": "your-publisher-name",
-  "repository": {
-    "url": "https://github.com/yourusername/your-repo"
-  }
+  "ai-content-developer.enableDebugMode": false,
+  "ai-content-developer.theme": "auto",
+  "ai-content-developer.githubToken": "your-github-token"
 }
 ```
 
-### 2. Add Custom Commands
+### GitHub Integration
 
-In `package.json`, add to `contributes.commands`:
-```json
-{
-  "command": "your-extension.newCommand",
-  "title": "Your Command Title",
-  "category": "Your Category"
-}
-```
-
-Then register in `CommandManager.ts`:
-```typescript
-this.registerCommand('your-extension.newCommand', () => this.yourHandler());
-```
-
-### 3. Customize WebView Content
-
-Edit `src/providers/WebviewProvider.ts`:
-- Modify `getHtmlContent()` method for HTML structure
-- Update message handlers in `handleWebviewMessage()`
-
-Edit `media/webview.js` and `media/webview.css`:
-- Customize the WebView UI and behavior
-- Add event listeners and styling
-
-### 4. Add Configuration Options
-
-In `package.json`, add to `contributes.configuration.properties`:
-```json
-"your-extension.yourSetting": {
-  "type": "string",
-  "default": "value",
-  "description": "Setting description"
-}
-```
-
-Update `ExtensionContext.ts` interface and `ConfigurationManager.ts` accordingly.
+For GitHub PR processing, optionally configure a personal access token:
+1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+2. Create a token with `repo` scope
+3. Add to VS Code settings: `ai-content-developer.githubToken`
 
 ## 🔧 Available Scripts
 
@@ -152,34 +176,35 @@ Update `ExtensionContext.ts` interface and `ConfigurationManager.ts` accordingly
 - `npm run test` - Run tests
 - `npm run vscode:prepublish` - Pre-publish hook
 
-## 🧪 Testing
-
-### Unit Tests
-
-Place your test files in `src/test/` directory:
-```typescript
-// src/test/extension.test.ts
-import * as assert from 'assert';
-import * as vscode from 'vscode';
-
-suite('Extension Test Suite', () => {
-  test('Sample test', () => {
-    assert.strictEqual(1 + 1, 2);
-  });
-});
-```
-
-Run tests:
-```bash
-npm test
-```
+## 🧪 Testing the Extension
 
 ### Manual Testing
 
-1. Press `F5` to launch extension development host
-2. Test your commands and WebView functionality
-3. Check the output channel for logs
-4. Use VS Code's Developer Tools (`Help > Toggle Developer Tools`) for WebView debugging
+1. **Launch Extension Development Host:**
+   - Press `F5` in VS Code to open a new window with the extension loaded
+
+2. **Test the Webview Interface:**
+   - Run `AI Content Developer: Open AI Content Developer` from Command Palette
+   - Upload test files (Word doc, PDF, or text file)
+   - Enter a content goal like "Create a getting started guide"
+   - Click "Create Documentation"
+
+3. **Test the Chat Participant:**
+   - Open VS Code Chat (`Ctrl+Shift+I` or `Cmd+Shift+I`)
+   - Type: `@content-creator Create API documentation for user authentication`
+   - Watch the sequential workflow execute
+
+4. **Verify Output:**
+   - Check that files are created in appropriate directories
+   - Verify content follows Microsoft documentation standards
+   - Test the "Open Created File" buttons
+
+### Debugging
+
+- **Extension Logs**: Check Output panel → "AI Content Developer"
+- **Chat Participant**: Monitor streaming responses in chat
+- **WebView**: Use Developer Tools (`Help > Toggle Developer Tools`)
+- **File Processing**: Check individual service logs for detailed processing info
 
 ## 📦 Building and Publishing
 
@@ -212,61 +237,58 @@ This creates a `.vsix` file in the project root.
    vsce publish
    ```
 
-## 🎯 Best Practices
+## 🔧 Technical Architecture
 
-### Code Organization
+### Core Components
 
-- Keep components modular and single-purpose
-- Use TypeScript interfaces for type safety
-- Implement proper error handling
-- Add comprehensive logging
+- **`ChatParticipantService`**: Main AI workflow orchestrator using VS Code Chat Participant API
+- **`CopilotIntegrationService`**: Manages webview-to-chat handoff with context preservation
+- **`InputHandlerService`**: Routes different file types to appropriate processing services
+- **`WorkflowContextManager`**: Handles context storage and retrieval for seamless handoffs
+- **`PromptService`**: Manages AI prompt templates with variable substitution
+- **`ContentPatternService`**: Enforces Microsoft documentation standards and patterns
 
-### WebView Security
+### File Processing Pipeline
 
-- Always use Content Security Policy
-- Validate all messages from WebView
-- Use nonces for inline scripts
-- Sanitize user input
+Each input type has a dedicated service:
+- **`WordDocumentService`**: Uses mammoth.js for .docx/.doc processing
+- **`PDFService`**: Uses pdf-parse for PDF text extraction
+- **`PowerPointService`**: XML parsing for .pptx/.ppt slide content
+- **`URLService`**: Web scraping with cheerio for HTML content
+- **`GitHubService`**: Octokit integration for PR data and diff analysis
+- **`TextService`**: Direct file reading for text and markdown files
 
-### Performance
+### AI Integration
 
-- Lazy load WebView content
-- Dispose resources properly
-- Use webpack for bundling
-- Minimize extension activation time
+- **Language Model API**: Uses `request.model.sendRequest()` for direct Copilot integration
+- **Streaming Responses**: Real-time progress updates via `stream.progress()` and `stream.markdown()`
+- **Structured Outputs**: JSON schema validation for consistent AI responses
+- **Context Preservation**: 30-minute TTL context storage for complex workflows
 
-### User Experience
+## 🐛 Troubleshooting
 
-- Provide clear command names
-- Add keyboard shortcuts for common actions
-- Support VS Code themes
-- Show progress for long operations
+### Common Issues
 
-## 🐛 Debugging
+1. **Chat Participant not appearing:**
+   - Ensure VS Code version 1.90.0 or higher
+   - Check that GitHub Copilot is active
+   - Verify extension is properly loaded
 
-### Extension Debugging
+2. **File processing errors:**
+   - Check file permissions and formats
+   - Verify internet connectivity for URLs
+   - Ensure GitHub token is configured for PR access
 
-1. Set breakpoints in TypeScript files
-2. Press `F5` to start debugging
-3. Use Debug Console for output
+3. **Workflow interruptions:**
+   - Check VS Code Chat for error messages
+   - Review extension logs in Output panel
+   - Verify Copilot subscription is active
 
-### WebView Debugging
+### Debugging Tools
 
-1. Open Developer Tools in the extension host
-2. Find your WebView in the Elements tab
-3. Use Console for JavaScript debugging
-
-### Logging
-
-The template includes a Logger utility:
-```typescript
-logger.info('Information message');
-logger.debug('Debug message');
-logger.warn('Warning message');
-logger.error('Error message', error);
-```
-
-View logs in the Output panel: `View > Output > VSCode WebView Extension`
+- **Extension Logs**: Output panel → "AI Content Developer"
+- **Chat Logs**: Monitor real-time workflow progress in Chat
+- **Context Debugging**: Use `getActiveContexts()` for context management issues
 
 ## 🤝 Contributing
 
@@ -284,34 +306,47 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Resources
 
-- [VS Code Extension API](https://code.visualstudio.com/api)
+- [VS Code Chat Participant API](https://code.visualstudio.com/api/extension-guides/chat)
+- [VS Code Language Model API](https://code.visualstudio.com/api/references/vscode-api#LanguageModel)
 - [WebView API Guide](https://code.visualstudio.com/api/extension-guides/webview)
 - [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-- [Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
+- [Microsoft Documentation Standards](https://docs.microsoft.com/en-us/contribute/)
 - [VS Code Icons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
 
-## 💡 Tips
+## 📚 Documentation
 
-- Use the VS Code Extension Generator for quick setup: `npm install -g yo generator-code`
-- Test your extension on different VS Code themes
-- Consider adding telemetry for usage insights (with user consent)
-- Keep your extension size small for faster installation
-- Document your API if other extensions might use it
+For detailed technical information:
+- **[Architecture Overview](docs/architecture.md)** - Complete system design
+- **[Data Flow](docs/dataflow.md)** - Processing pipeline details
+- **[Quickstart Guide](QUICKSTART.md)** - Quick setup instructions
 
-## 🎉 Examples
+## 💡 Use Cases
 
-Here are some ideas for extensions you can build with this template:
+Perfect for creating:
 
-- **Data Visualizer**: Display charts and graphs from workspace data
-- **API Client**: Interactive REST API testing tool
-- **Documentation Browser**: Browse and search project documentation
-- **Task Manager**: Manage and track project tasks
-- **Database Explorer**: Connect and browse databases
-- **Code Metrics**: Display code quality metrics and statistics
-- **Learning Platform**: Interactive coding tutorials
+- **📋 Getting Started Guides**: Onboard new team members with comprehensive setup instructions
+- **🔧 API Documentation**: Generate complete API references from code and specs
+- **📖 How-to Guides**: Step-by-step procedures for common tasks
+- **🎓 Tutorials**: Learning-focused content with examples and exercises
+- **📊 Technical Overviews**: High-level service and architecture explanations
+- **🐛 Troubleshooting Guides**: Problem-solving documentation from support tickets
+
+## 🚀 Example Workflows
+
+```bash
+# Create documentation from GitHub PR
+@content-creator Analyze PR #123 and create deployment documentation
+
+# Generate guide from multiple sources
+Upload: [design-spec.pdf, api-endpoints.md, user-feedback.docx]
+Goal: "Create a complete integration guide for developers"
+
+# Update existing documentation
+@content-creator Update the authentication guide with OAuth 2.0 PKCE flow
+```
 
 ---
 
-**Happy Coding!** 🚀
+**Transform your documentation workflow with AI!** 🚀
 
-If you find this template helpful, please consider giving it a ⭐ on GitHub!
+If you find this extension helpful, please consider giving it a ⭐ on GitHub!

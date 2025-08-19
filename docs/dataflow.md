@@ -1,8 +1,8 @@
-# VSCode WebView Extension - Data Flow Documentation
+# AI Content Developer - Data Flow Documentation
 
-## Complete Data Flow Architecture
+## Complete AI Workflow Data Flow
 
-This document illustrates how data flows through the extension from user input to final output, showing the journey of information through various processing stages.
+This document illustrates how data flows through the AI Content Developer extension from user input via webview to AI-generated documentation, showing the journey through sequential orchestration and Chat Participant API integration.
 
 ```mermaid
 graph TD
@@ -144,50 +144,61 @@ graph TD
     style CopilotAPI fill:#f1f8e9
 ```
 
-## Detailed Data Flow Steps
+## Detailed AI Workflow Data Flow Steps
 
-### 1. User Input Collection
+### 1. User Input Collection (Webview Interface)
 ```
 User Actions → UI State → Message Creation
-├── File Selection (VS Code file dialog)
-├── URL Entry (text input)
-├── GitHub PR URL (text input)
-└── Goal Definition (textarea)
+├── File Selection (VS Code file dialog) - Word, PDF, PowerPoint, Text, URLs, GitHub PRs
+├── Goal Definition (textarea) - "Create API documentation", "Write getting started guide"
+├── Input Validation (client-side) - Ensure files and goal are provided
+└── PROCESS_INPUTS Message - Triggers backend workflow
 ```
 
-### 2. Message Communication
+### 2. File Processing Pipeline
 ```
-Frontend → Backend Communication
-├── postMessage(PROCESS_INPUTS, payload)
-├── onDidReceiveMessage(message)
-└── Message routing to appropriate handler
-```
-
-### 3. Input Processing
-```
-Raw Inputs → Typed Inputs → Processed Content
-├── Type Detection (URL patterns, file extensions)
-├── Service Selection (lazy loading)
-├── Content Extraction (service-specific logic)
-└── Standardization (ProcessedContent format)
+Raw Inputs → Type Detection → Service Routing → Content Extraction
+├── InputHandlerService.detectInputType() - Analyzes file extensions and URL patterns
+├── Lazy Service Loading - WordDocumentService, PDFService, etc. loaded on demand
+├── Content Extraction - Service-specific processing (mammoth.js, pdf-parse, cheerio, etc.)
+└── ProcessedContent[] - Standardized format with text and metadata
 ```
 
-### 4. Workflow Execution
+### 3. Context Handoff System
 ```
-Content → Workflow → Steps → Results
-├── Workflow Selection (technical-documentation)
-├── Step Dependencies (analyze → outline → write...)
-├── Prompt Rendering (variable substitution)
-└── AI Processing (Copilot API calls)
+Processed Content → Context Storage → Chat Participant Launch
+├── WorkflowContextManager.storeContext() - Creates unique context ID with 30-min TTL
+├── Context Data - Goal, processed files, metadata stored temporarily
+├── Chat Query Generation - "@content-creator context:${contextId}"
+└── workbench.action.chat.open - Automatic VS Code Chat launch
 ```
 
-### 5. Response Handling
+### 4. Sequential AI Workflow Execution (Chat Participant)
 ```
-AI Response → Processing → UI Update
-├── Step Result Storage
-├── Progress Notifications
-├── Error Handling
-└── Final Document Assembly
+Chat Request → Repository Analysis → 5-Step AI Orchestration
+├── Step 1: Repository Structure Analysis - VS Code APIs scan workspace
+├── Step 2: Directory Selection - AI chooses optimal content placement
+├── Step 3: Content Strategy - AI decides CREATE vs UPDATE approach
+├── Step 4: Pattern Selection - AI selects Microsoft documentation template
+└── Step 5: Content Generation - AI creates professional documentation
+```
+
+### 5. Language Model API Integration
+```
+Prompt Templates → Variable Substitution → AI Processing → JSON Extraction
+├── PromptService.renderPrompt() - Template variable substitution
+├── request.model.sendRequest() - Direct Language Model API calls
+├── Streaming Response Processing - Real-time progress via stream.progress()
+└── JSON Schema Validation - Structured outputs ensure consistency
+```
+
+### 6. Document Creation & User Feedback
+```
+AI Response → File Writing → User Notification → Interactive Actions
+├── File System Write - Document created in selected directory
+├── Pattern Compliance Validation - Ensures Microsoft standards adherence
+├── Chat Response with Buttons - "Open Created File", "Create More Content"
+└── Context Cleanup - Automatic removal after successful completion
 ```
 
 ## Data Structures Flow
@@ -215,71 +226,123 @@ interface ProcessedContent {
 ### Workflow Context Structure
 ```typescript
 interface WorkflowContext {
-  goal: string;                           // User's objective
-  processedContents: ProcessedContent[];  // All processed inputs
-  stepOutputs: Map<string, string>;       // Results from each step
-  currentStep: number;                    // Progress tracking
-  totalSteps: number;                     // Total workflow steps
+  contextId: string;                      // Unique context identifier
+  timestamp: number;                      // Creation timestamp for TTL
+  goal: string;                           // User's content objective
+  processedFiles: ProcessedContent[];     // All processed input files
+  originalInputs: InputFile[];            // Original file references
+  options: { workspaceRoot?: string };    // Additional context options
+  metadata: {                             // Extension metadata
+    userAgent: string;
+    vscodeVersion: string;
+    extensionVersion: string;
+  };
 }
 ```
 
-## Error Handling Flow
+### AI Workflow Step Schemas
+```typescript
+interface DirectorySelectionSchema {
+  selectedDirectory: string;              // Chosen directory path
+  reasoning: string;                      // AI's selection reasoning
+  confidence: number;                     // Confidence score (0.0-1.0)
+  existingFiles: string[];                // Files in selected directory
+  directoryPurpose: string;               // Purpose description
+  alternativeOptions: Array<{             // Alternative directory options
+    directory: string;
+    reason: string;
+  }>;
+}
+
+interface ContentStrategySchema {
+  action: 'CREATE' | 'UPDATE';            // Strategy decision
+  targetFile?: string;                    // File to update (if UPDATE)
+  reasoning: string;                      // Strategy reasoning
+  contentOverlap: number;                 // Overlap percentage (0-100)
+  existingContentSummary?: string;        // Summary of existing content
+  userJourneyContext: string;             // User journey context
+}
+```
+
+## AI Workflow Error Handling
 
 ```mermaid
 graph TD
-    A[Processing Error] --> B{Error Type}
-    B -->|File Not Found| C[Show File Error Message]
-    B -->|Network Timeout| D[Show Network Error Message]
-    B -->|API Failure| E[Show API Error Message]
-    B -->|Workflow Step Failure| F[Continue with Next Step]
+    A[AI Processing Error] --> B{Error Type}
+    B -->|File Processing Error| C[Show File Error in Webview]
+    B -->|Network Timeout| D[Show Network Error in Chat]
+    B -->|Language Model API Error| E[Show AI Error in Chat Stream]
+    B -->|JSON Parsing Error| F[Log Error & Use Fallback]
+    B -->|Context Expired| G[Prompt User to Restart from Webview]
     
-    C --> G[Log Error Details]
-    D --> G
-    E --> G
-    F --> G
+    C --> H[Log Error Details]
+    D --> H
+    E --> H
+    F --> H
+    G --> H
     
-    G --> H[Update UI with Error Status]
-    H --> I[Allow User Retry]
+    H --> I[Update Chat with Error Status]
+    I --> J[Provide Recovery Options]
 ```
 
-## Performance Optimization Flow
+## Context Management Flow
 
-### Lazy Loading Strategy
+### Context Lifecycle
 ```
-Service Request → Check Cache → Load if Needed → Execute
-├── InputHandlerService (always loaded)
-├── File Services (loaded on demand)
-├── WorkflowOrchestrator (loaded on first workflow)
-└── PromptService (loaded with orchestrator)
-```
-
-### Content Processing Optimization
-```
-Large File → Stream Processing → Chunked Extraction → Memory Management
-├── File Size Check (before processing)
-├── Stream Reading (for large files)
-├── Progressive Processing (yield control)
-└── Buffer Cleanup (prevent memory leaks)
+Context Creation → Storage → Retrieval → Cleanup
+├── nanoid(12) - Generate unique context ID
+├── 30-minute TTL - Automatic expiration
+├── Periodic Cleanup - Every 5 minutes check for expired contexts
+└── Manual Removal - After successful workflow completion
 ```
 
-## Security Considerations in Data Flow
-
-### Input Validation
+### Context Handoff Protocol
 ```
-User Input → Sanitization → Validation → Processing
-├── URL validation (prevent malicious URLs)
-├── File path validation (prevent path traversal)
-├── Content size limits (prevent DoS)
-└── Type validation (ensure expected formats)
+Webview Request → Context Storage → Chat Launch → Context Retrieval
+├── CopilotIntegrationService.createNewContent() - Initial processing
+├── WorkflowContextManager.storeContext() - Temporary storage
+├── Chat Query Generation - "@content-creator context:${contextId}"
+└── ChatParticipantService.retrieveContext() - Context restoration
 ```
 
-### API Communication
+## AI Integration Performance
+
+### Language Model API Optimization
 ```
-Prompt Data → Sanitization → API Call → Response Validation
-├── Remove sensitive information
-├── Validate API responses
-├── Handle rate limiting
-└── Implement timeouts
+Prompt Preparation → Streaming Request → Progressive Response → JSON Extraction
+├── Template Rendering - Variable substitution in prompts
+├── Streaming API Calls - Real-time progress updates
+├── Fragment Processing - Progressive content delivery
+└── Schema Validation - Structured output parsing
 ```
 
-This data flow ensures robust, secure, and efficient processing of user inputs while maintaining clear separation of concerns and providing excellent user experience through progress feedback and error handling.
+### Memory Management
+```
+File Processing → Context Storage → AI Processing → Cleanup
+├── ProcessedContent Limit - Reasonable memory usage
+├── Context TTL Management - 30-minute automatic cleanup
+├── Stream Buffer Management - Progressive AI response handling
+└── Service Disposal - Proper resource cleanup on deactivation
+```
+
+## Security Considerations in AI Workflow
+
+### Input Sanitization
+```
+User Input → File Validation → Content Extraction → AI Processing
+├── File Type Validation - Ensure supported formats
+├── URL Validation - Prevent malicious URLs
+├── Content Size Limits - 10MB max for URLs, reasonable file sizes
+└── GitHub Token Security - Optional token storage in VS Code settings
+```
+
+### AI Response Validation
+```
+AI Response → JSON Extraction → Schema Validation → Content Application
+├── JSON Format Validation - Ensure structured responses
+├── Schema Compliance - Validate against expected data types
+├── Content Sanitization - Remove any potentially harmful content
+└── Pattern Enforcement - Ensure Microsoft documentation standards
+```
+
+This AI-powered data flow ensures robust, secure, and intelligent processing of user inputs while providing real-time feedback and maintaining deterministic, high-quality documentation generation through the Chat Participant API integration.

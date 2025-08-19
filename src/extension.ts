@@ -16,10 +16,10 @@ let logger: Logger | undefined;
  */
 export function activate(context: vscode.ExtensionContext): void {
   try {
-    console.log('VSCode WebView Extension: Starting activation...');
+    console.log('AI Content Developer: Starting activation...');
     
     // Initialize logger
-    logger = new Logger('VSCode WebView Extension');
+    logger = new Logger('AI Content Developer');
     logger.info('Extension is being activated');
 
     // Initialize configuration manager
@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Watch for configuration changes
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration('vscode-webview-extension')) {
+        if (e.affectsConfiguration('ai-content-developer')) {
           configManager!.reload();
           logger!.info('Configuration reloaded');
 
@@ -59,13 +59,13 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     logger.info('Extension has been activated successfully');
-    console.log('VSCode WebView Extension: Activation completed successfully');
+    console.log('AI Content Developer: Activation completed successfully');
     
     // Show success message
-    vscode.window.showInformationMessage('WebView Extension activated successfully!');
+    vscode.window.showInformationMessage('AI Content Developer activated successfully!');
   } catch (error) {
-    console.error('VSCode WebView Extension: Activation failed:', error);
-    vscode.window.showErrorMessage(`Extension activation failed: ${error instanceof Error ? error.message : String(error)}`);
+    console.error('AI Content Developer: Activation failed:', error);
+    vscode.window.showErrorMessage(`AI Content Developer activation failed: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }

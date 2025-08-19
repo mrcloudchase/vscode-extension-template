@@ -33,8 +33,6 @@ export default class CopilotIntegrationService {
     contentRequest: string,
     inputs: InputFile[],
     options?: {
-      audience?: string;
-      contentType?: string;
       onProgress?: (step: string, message: string) => void;
     }
   ): Promise<OrchestrationResult> {
@@ -55,10 +53,7 @@ export default class CopilotIntegrationService {
         contentRequest,
         this.processedContents,
         inputs,
-        {
-          audience: options?.audience,
-          contentType: options?.contentType
-        }
+        {}
       );
 
       // Generate chat query with context ID

@@ -14,8 +14,8 @@ export class CommandManager implements vscode.Disposable {
    * Register all extension commands
    */
   public registerCommands(): void {
-    this.registerCommand('vscode-webview-extension.openWebview', () => this.openWebview());
-    this.registerCommand('vscode-webview-extension.refresh', () => this.refreshWebview());
+    this.registerCommand('ai-content-developer.openWebview', () => this.openWebview());
+    this.registerCommand('ai-content-developer.refresh', () => this.refreshWebview());
 
     this.context.logger.info('Commands registered successfully');
   }

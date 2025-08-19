@@ -1,13 +1,13 @@
-# Quick Start Guide 🚀
+# AI Content Developer - Quick Start Guide 🚀
 
-Welcome to the VSCode WebView Extension Template! This guide will help you get up and running in minutes.
+Get up and running with AI-powered technical documentation creation in minutes!
 
 ## 📋 Prerequisites Check
 
 Before starting, ensure you have:
 - ✅ Node.js v16+ installed (`node --version`)
-- ✅ npm or yarn installed (`npm --version`)
-- ✅ Visual Studio Code installed
+- ✅ Visual Studio Code v1.90.0+ installed
+- ✅ GitHub Copilot subscription active
 - ✅ Git installed (`git --version`)
 
 ## 🎯 5-Minute Setup
@@ -22,16 +22,34 @@ npm install
 code .
 ```
 
-### Step 3: Start Development
-Press `F5` to launch the extension in a new VS Code window.
+### Step 3: Launch Extension
+Press `F5` to open a new VS Code window with the extension loaded.
 
-### Step 4: Test the Extension
+### Step 4: Test the AI Content Developer
 In the new VS Code window:
 1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-2. Type: `WebView Extension: Open WebView`
+2. Type: `AI Content Developer: Open AI Content Developer`
 3. Press Enter
 
-🎉 **Congratulations!** You should now see your webview panel!
+🎉 **Congratulations!** You should now see the AI Content Developer interface!
+
+## 🤖 First Documentation Creation
+
+### Quick Test Workflow
+
+1. **In the webview interface:**
+   - Click "Select Files" and choose a text file or document
+   - In the "Content Goal" field, type: `Create a getting started guide`
+   - Click "Create Documentation"
+
+2. **In the chat interface:**
+   - Watch as the `@content-creator` participant analyzes your repository
+   - See real-time progress through the 5-step workflow
+   - Click "Open Created File" when complete
+
+3. **Verify the result:**
+   - Check that a new markdown file was created in an appropriate directory
+   - Review the generated content for structure and quality
 
 ## 🛠️ Development Workflow
 
@@ -48,49 +66,52 @@ npm run compile
 
 ### Debugging Tips
 1. **Extension Code**: Set breakpoints in `.ts` files and debug with F5
-2. **WebView Code**: Use Developer Tools (`Help > Toggle Developer Tools`)
-3. **View Logs**: Check Output panel (`View > Output > VSCode WebView Extension`)
+2. **Chat Participant**: Monitor responses in VS Code Chat interface
+3. **WebView Code**: Use Developer Tools (`Help > Toggle Developer Tools`)
+4. **View Logs**: Check Output panel (`View > Output > AI Content Developer`)
 
-## 📝 First Customizations
+## 🎯 Understanding the AI Workflow
 
-### 1. Change Extension Name
-Edit `package.json`:
-```json
-{
-  "name": "my-awesome-extension",
-  "displayName": "My Awesome Extension"
-}
-```
+### Sequential Steps Explained
 
-### 2. Modify WebView Content
-Edit `src/providers/WebviewProvider.ts` - Look for the `getHtmlContent()` method.
+1. **🔍 Repository Analysis**: 
+   - AI scans your workspace structure
+   - Identifies existing documentation patterns
+   - Detects project type and conventions
 
-### 3. Add a New Command
-1. Add to `package.json`:
-```json
-"commands": [{
-  "command": "myExtension.helloWorld",
-  "title": "Hello World"
-}]
-```
+2. **📁 Directory Selection**:
+   - AI selects optimal location for new content
+   - Considers existing documentation organization
+   - Provides reasoning for placement decision
 
-2. Register in `src/commands/CommandManager.ts`:
-```typescript
-this.registerCommand('myExtension.helloWorld', () => {
-  vscode.window.showInformationMessage('Hello World!');
-});
-```
+3. **🎯 Content Strategy**:
+   - AI decides: CREATE new content vs UPDATE existing
+   - Analyzes content overlap and user journey
+   - Ensures coherent documentation experience
 
-## 🔍 Project Structure Overview
+4. **🎨 Pattern Selection**:
+   - AI chooses appropriate Microsoft documentation pattern
+   - Matches user intent with optimal structure
+   - Considers audience and technical complexity
 
-```
-📦 Your Extension
-├── 📂 src/              # TypeScript source code
-│   ├── 📄 extension.ts  # Entry point
-│   └── 📂 providers/    # WebView logic
-├── 📂 media/            # WebView assets (HTML/CSS/JS)
-├── 📂 dist/             # Compiled JavaScript (generated)
-└── 📄 package.json      # Extension manifest
+5. **✍️ Content Generation**:
+   - AI creates professional, structured content
+   - Follows Microsoft documentation standards
+   - Includes proper front matter and formatting
+
+### Chat Participant Commands
+
+You can also interact directly with the chat participant:
+
+```bash
+# Create new documentation
+@content-creator Create a deployment guide for containerized applications
+
+# Update existing content  
+@content-creator Update the API authentication guide with PKCE flow
+
+# Analyze and document
+@content-creator Review this GitHub PR and create release notes
 ```
 
 ## 🧪 Testing Your Changes
@@ -132,34 +153,43 @@ npm run package
 ### Extension Not Loading?
 1. Check for errors in Debug Console
 2. Ensure `npm install` completed successfully
-3. Try `npm run compile` manually
+3. Verify VS Code version is 1.90.0 or higher
+4. Try `npm run compile` manually
 
-### WebView Not Showing?
-1. Check browser console for errors (Developer Tools)
-2. Verify CSP settings in `WebviewProvider.ts`
-3. Check Output panel for logs
+### Chat Participant Not Available?
+1. Ensure GitHub Copilot extension is installed and active
+2. Check that you have a valid Copilot subscription
+3. Verify VS Code Chat is available (`Ctrl+Shift+I`)
+4. Check extension logs for registration errors
 
-### Changes Not Reflecting?
-1. Ensure `npm run watch` is running
-2. Reload window (`Ctrl+R` / `Cmd+R`)
-3. Restart Extension Host (`Ctrl+Shift+F5` / `Cmd+Shift+F5`)
+### File Processing Errors?
+1. Verify file permissions and formats
+2. Check internet connectivity for URLs
+3. Configure GitHub token for PR access in settings
+4. Review file size limits (10MB max for URLs)
+
+### Workflow Interruptions?
+1. Check VS Code Chat for error messages
+2. Review extension logs in Output panel
+3. Verify context hasn't expired (30-minute limit)
+4. Restart workflow from webview if needed
 
 ## 📖 Next Steps
 
-1. **Read the Main README**: Detailed documentation and best practices
-2. **Explore the Code**: Start with `src/extension.ts`
-3. **Check VS Code API Docs**: https://code.visualstudio.com/api
-4. **Join the Community**: https://github.com/microsoft/vscode-discussions
+1. **Read the Main README**: Complete feature overview and technical details
+2. **Explore the Architecture**: Check `docs/architecture.md` for system design
+3. **Review Data Flow**: See `docs/dataflow.md` for processing pipeline
+4. **Try Advanced Features**: Test GitHub PR analysis and multi-file workflows
 
 ## 💬 Need Help?
 
-- 📋 Check existing issues on GitHub
-- 💡 Read VS Code Extension samples
-- 🤝 Ask in VS Code Discord/Slack communities
-- 📚 Review WebView documentation
+- 📋 Check the [troubleshooting section](README.md#troubleshooting) in main README
+- 🤖 Review chat participant logs for workflow issues
+- 📚 Consult [VS Code Chat Participant API docs](https://code.visualstudio.com/api/extension-guides/chat)
+- 🐛 Report issues with detailed logs and reproduction steps
 
 ---
 
-**Happy Coding!** 🎉
+**Start creating professional documentation with AI!** 🚀
 
-Remember: The best way to learn is by experimenting. Don't be afraid to break things - that's what version control is for!
+The extension is designed to be intuitive - upload your materials, describe your goal, and let AI handle the rest!

@@ -13,8 +13,6 @@ export interface WorkflowContext {
   processedFiles: ProcessedContent[];
   originalInputs: InputFile[];
   options: {
-    audience?: string;
-    contentType?: string;
     workspaceRoot?: string;
     [key: string]: any;
   };
@@ -57,8 +55,6 @@ export class WorkflowContextManager {
     processedFiles: ProcessedContent[],
     originalInputs: InputFile[],
     options: {
-      audience?: string;
-      contentType?: string;
       [key: string]: any;
     } = {}
   ): string {

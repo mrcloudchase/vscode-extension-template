@@ -1,56 +1,60 @@
-# VSCode WebView Extension Documentation
+# AI Content Developer - Technical Documentation
 
-Welcome to the comprehensive documentation for the VSCode WebView Extension - a sophisticated document processing and technical writing workflow system.
+Welcome to the comprehensive technical documentation for the AI Content Developer extension - a sophisticated AI-powered technical documentation creation system using VS Code's Chat Participant API.
 
 ## 📚 Documentation Overview
 
-This documentation provides detailed insights into the architecture, data flow, and implementation details of the extension.
+This documentation provides detailed insights into the architecture, AI workflow orchestration, and implementation details of the extension.
 
 ### Available Documentation
 
 | Document | Description | Purpose |
 |----------|-------------|---------|
-| [**Architecture**](./architecture.md) | Complete system architecture with component relationships | Understanding the overall system design |
-| [**Data Flow**](./dataflow.md) | Detailed data flow from input to output with processing stages | Understanding how data moves through the system |
+| [**Architecture**](./architecture.md) | Complete system architecture with AI workflow components | Understanding the overall system design and Chat Participant integration |
+| [**Data Flow**](./dataflow.md) | Detailed data flow from webview input to AI-generated documentation | Understanding how data moves through the sequential orchestration process |
 
-## 🏗️ Architecture Highlights
+## 🤖 AI-Powered Architecture Highlights
 
-- **Modular Design**: Clear separation of concerns with focused services
-- **Workflow Orchestration**: Deterministic multi-step document creation
-- **Template-Based Prompts**: Externalized, reusable prompt templates
-- **Type-Safe Processing**: Strong TypeScript typing throughout
-- **Lazy Loading**: Performance-optimized service instantiation
+- **Chat Participant Integration**: Uses official VS Code Chat Participant API for AI workflows
+- **Sequential Orchestration**: Deterministic 5-step AI workflow with structured JSON outputs
+- **Context Handoff System**: Seamless webview-to-chat transition with preserved context
+- **Microsoft Documentation Standards**: Enforces official content patterns and formatting
+- **Multi-Format Processing**: Intelligent handling of diverse input types with specialized services
+- **Real-time Streaming**: Live progress updates during AI processing
 
-## 🔄 Key Data Flow Features
+## 🔄 Key AI Workflow Features
 
-- **Multi-Format Input**: Support for Word, PDF, PowerPoint, text files, URLs, and GitHub PRs
-- **Intelligent Routing**: Automatic input type detection and service routing
-- **Progress Tracking**: Real-time workflow progress updates
-- **Error Recovery**: Graceful handling of processing failures
-- **Content Aggregation**: Seamless combination of multiple input sources
+- **Repository Intelligence**: Deep analysis of workspace structure and existing documentation
+- **Smart Content Strategy**: AI decides create vs. update based on content overlap analysis
+- **Pattern-Based Generation**: Uses Microsoft's official documentation templates (Overview, Quickstart, How-to, Tutorial, Concept)
+- **Deterministic Decision Making**: Structured schemas ensure consistent, reliable AI outputs
+- **Context Preservation**: 30-minute TTL context storage for complex multi-step workflows
+- **Error Recovery**: Graceful handling of AI processing failures with retry capabilities
 
 ## 🚀 Quick Start
 
-To understand the system:
+To understand the AI Content Developer system:
 
-1. **Read the [Architecture](./architecture.md)** to understand the component structure
-2. **Review the [Data Flow](./dataflow.md)** to see how inputs are processed
-3. **Examine the source code** with these diagrams as your guide
+1. **Read the [Architecture](./architecture.md)** to understand the Chat Participant integration and component structure
+2. **Review the [Data Flow](./dataflow.md)** to see how inputs flow through the AI workflow pipeline
+3. **Examine the orchestration prompts** in `src/prompts/orchestration/` to understand AI decision-making
+4. **Test the sequential workflow** using the quickstart guide
 
 ## 🎯 Target Audience
 
-This documentation is designed for:
+This technical documentation is designed for:
 
-- **Developers** extending or maintaining the extension
-- **Technical Writers** understanding the workflow capabilities
-- **Architects** reviewing the system design
-- **Contributors** looking to add new features
+- **Extension Developers** extending or maintaining the AI workflow system
+- **Technical Writers** understanding the AI-powered content creation capabilities
+- **AI Engineers** reviewing the Chat Participant API integration and prompt engineering
+- **Contributors** looking to add new content patterns or file processing services
 
 ## 📋 System Requirements
 
-- **VS Code**: Version 1.60 or higher
+- **VS Code**: Version 1.90.0 or higher (for Chat Participant API)
+- **GitHub Copilot**: Active subscription required for AI functionality
 - **Node.js**: Version 16 or higher
-- **TypeScript**: Version 4.5 or higher
+- **TypeScript**: Version 5.6 or higher
 
 ## 🔧 Development Setup
 
@@ -58,41 +62,41 @@ This documentation is designed for:
 2. Install dependencies: `npm install`
 3. Compile the extension: `npm run compile`
 4. Run in debug mode: Press `F5` in VS Code
+5. Test chat participant: Open Chat and type `@content-creator help`
 
-## 📊 Metrics & Performance
+## 📊 AI Workflow Performance
 
-The extension is designed with performance in mind:
+The extension is optimized for AI-powered workflows:
 
-- **Lazy Loading**: Services loaded only when needed
-- **Streaming Processing**: Large files processed in chunks
-- **Memory Management**: Proper cleanup of resources
-- **Timeout Handling**: Network requests have appropriate limits
+- **Lazy Service Loading**: File processing services loaded only when needed
+- **Context Management**: 30-minute TTL with automatic cleanup
+- **Streaming Responses**: Real-time AI progress updates
+- **Memory Efficiency**: Proper cleanup of processed content and contexts
+- **Timeout Handling**: Appropriate limits for AI model requests
 
-## 🔍 Troubleshooting
+## 🔍 Troubleshooting AI Workflows
 
-Common issues and solutions:
+Common AI workflow issues and solutions:
 
-1. **Extension not activating**: Check activation events in `package.json`
-2. **File processing errors**: Verify file permissions and formats
-3. **Network timeouts**: Check internet connectivity and API limits
-4. **Memory issues**: Monitor file sizes and processing limits
+1. **Chat participant not registering**: Check VS Code version and Copilot subscription
+2. **Workflow step failures**: Review structured JSON schema validation in logs
+3. **Context handoff issues**: Verify context ID generation and retrieval
+4. **AI response parsing errors**: Check JSON extraction from streaming responses
 
-## 🤝 Contributing
+## 🤝 Contributing to AI Workflows
 
-When contributing to this extension:
+When contributing to the AI Content Developer:
 
-1. **Review the architecture** to understand the design patterns
-2. **Follow the data flow** to see where your changes fit
-3. **Maintain separation of concerns** established in the architecture
-4. **Add appropriate tests** for new functionality
-5. **Update documentation** to reflect changes
+1. **Understand the sequential orchestration** pattern used throughout
+2. **Follow the prompt engineering** guidelines in orchestration templates
+3. **Maintain JSON schema consistency** for AI response validation
+4. **Test with various input combinations** to ensure robustness
+5. **Update both code and documentation** to reflect AI workflow changes
 
 ## 📝 Version History
 
-- **v1.0.0**: Initial architecture with basic workflow support
-- **v1.1.0**: Added workflow orchestration system
-- **v1.2.0**: Implemented prompt template system
-- **v1.3.0**: Enhanced error handling and progress tracking
+- **v0.0.1**: Chat Participant API implementation with sequential orchestration
+- **Current**: Full AI workflow with Microsoft documentation standards integration
 
 ---
 

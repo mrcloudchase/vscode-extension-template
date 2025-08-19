@@ -70,7 +70,7 @@ export class ChatParticipantService {
       }
 
       this.participant = vscode.chat.createChatParticipant(
-        'vscode-webview-extension.content-creator',
+        'ai-content-developer.content-creator',
         this.handleChatRequest.bind(this)
       );
 
@@ -157,12 +157,6 @@ export class ChatParticipantService {
     stream.markdown(`🔗 **Context Retrieved**\n`);
     stream.markdown(`📝 **Goal:** ${workflowContext.goal}\n`);
     stream.markdown(`📄 **Files:** ${workflowContext.processedFiles.length} processed\n`);
-    if (workflowContext.options.audience) {
-      stream.markdown(`👥 **Audience:** ${workflowContext.options.audience}\n`);
-    }
-    if (workflowContext.options.contentType) {
-      stream.markdown(`📋 **Type:** ${workflowContext.options.contentType}\n`);
-    }
     stream.markdown('\n---\n\n');
 
     // Start the workflow with context
@@ -190,7 +184,7 @@ export class ChatParticipantService {
       });
       
       stream.button({
-        command: 'vscode-webview-extension.openWebview',
+        command: 'ai-content-developer.openWebview',
         title: 'Create More Content'
       });
     } else {
@@ -232,7 +226,7 @@ export class ChatParticipantService {
       });
       
       stream.button({
-        command: 'vscode-webview-extension.openWebview',
+        command: 'ai-content-developer.openWebview',
         title: 'Upload Files & Create More'
       });
     } else {
@@ -359,9 +353,11 @@ export class ChatParticipantService {
     const response = await request.model.sendRequest(messages, {}, token);
     
     let responseText = '';
+    this.context.logger.info('Directory selection: Starting stream processing...');
     for await (const fragment of response.text) {
       responseText += fragment;
     }
+    this.context.logger.info(`Directory selection: Stream complete, received ${responseText.length} characters`);
 
     return this.extractJSON<DirectorySelectionSchema>(responseText);
   }
@@ -388,9 +384,11 @@ export class ChatParticipantService {
     const response = await request.model.sendRequest(messages, {}, token);
     
     let responseText = '';
+    this.context.logger.info('Content strategy: Starting stream processing...');
     for await (const fragment of response.text) {
       responseText += fragment;
     }
+    this.context.logger.info(`Content strategy: Stream complete, received ${responseText.length} characters`);
 
     return this.extractJSON<ContentStrategySchema>(responseText);
   }
@@ -417,9 +415,11 @@ export class ChatParticipantService {
     const response = await request.model.sendRequest(messages, {}, token);
     
     let responseText = '';
+    this.context.logger.info('Pattern selection: Starting stream processing...');
     for await (const fragment of response.text) {
       responseText += fragment;
     }
+    this.context.logger.info(`Pattern selection: Stream complete, received ${responseText.length} characters`);
 
     return this.extractJSON<PatternSelectionSchema>(responseText);
   }
@@ -454,6 +454,7 @@ export class ChatParticipantService {
     const response = await request.model.sendRequest(messages, {}, token);
     
     let responseText = '';
+    this.context.logger.info('Content generation: Starting stream processing...');
     for await (const fragment of response.text) {
       responseText += fragment;
       // Stream progress to user
@@ -461,6 +462,7 @@ export class ChatParticipantService {
         stream.markdown('📝 ');
       }
     }
+    this.context.logger.info(`Content generation: Stream complete, received ${responseText.length} characters`);
 
     const generationData = this.extractJSON<ContentGenerationSchema>(responseText);
     
@@ -513,6 +515,7 @@ export class ChatParticipantService {
     const response = await request.model.sendRequest(messages, {}, token);
     
     let responseText = '';
+    this.context.logger.info('Content update: Starting stream processing...');
     for await (const fragment of response.text) {
       responseText += fragment;
       // Stream progress to user
@@ -520,6 +523,7 @@ export class ChatParticipantService {
         stream.markdown('📝 ');
       }
     }
+    this.context.logger.info(`Content update: Stream complete, received ${responseText.length} characters`);
 
     const updateData = this.extractJSON<ContentGenerationSchema>(responseText);
     
@@ -818,7 +822,7 @@ export class ChatParticipantService {
     stream.markdown('5. ✍️ **Content Generation** - Creating professional, structured content\n\n');
     
     stream.button({
-      command: 'vscode-webview-extension.openWebview',
+      command: 'ai-content-developer.openWebview',
       title: 'Open Full Interface',
       tooltip: 'Open the complete Content Creator interface for file uploads and detailed requests'
     });

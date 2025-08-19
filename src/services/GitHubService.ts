@@ -170,7 +170,7 @@ export class GitHubService extends BaseService {
    */
   private getGitHubToken(): string | undefined {
     // Try to get from VS Code configuration
-    const config = vscode.workspace.getConfiguration('vscode-webview-extension');
+    const config = vscode.workspace.getConfiguration('ai-content-developer');
     const token = config.get<string>('githubToken');
     
     if (token) {

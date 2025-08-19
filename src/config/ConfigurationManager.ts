@@ -3,7 +3,7 @@ import { ExtensionConfiguration } from '../types/ExtensionContext';
 
 export class ConfigurationManager {
   private configuration: ExtensionConfiguration;
-  private readonly configSection = 'vscode-webview-extension';
+  private readonly configSection = 'ai-content-developer';
 
   constructor() {
     this.configuration = this.loadConfiguration();

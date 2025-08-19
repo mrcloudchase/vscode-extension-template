@@ -1,53 +1,53 @@
 {
-  "name": "vscode-webview-extension-template",
-  "displayName": "VSCode WebView Extension Template",
-  "description": "A modern template for building VSCode extensions with WebView support",
+  "name": "ai-content-developer",
+  "displayName": "AI Content Developer",
+  "description": "Create professional technical documentation with AI assistance using VS Code Chat Participant API",
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "doveychase",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "AI",
+    "Documentation"
   ],
   "keywords": [
-    "vscode",
-    "extension",
-    "webview",
-    "template"
+    "ai",
+    "documentation",
+    "content",
+    "copilot",
+    "chat-participant",
+    "technical-writing"
   ],
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/vscode-extension-template"
+    "url": "https://github.com/doveychase/ai-content-developer"
   },
   "main": "./dist/extension.js",
-  "activationEvents": [
-    "onCommand:vscode-webview-extension.openWebview",
-    "onCommand:vscode-webview-extension.refresh"
-  ],
   "contributes": {
     "commands": [
       {
-        "command": "vscode-webview-extension.openWebview",
-        "title": "Open WebView",
-        "category": "WebView Extension"
+        "command": "ai-content-developer.openWebview",
+        "title": "Open AI Content Developer",
+        "category": "AI Content Developer"
       },
       {
-        "command": "vscode-webview-extension.refresh",
-        "title": "Refresh WebView",
-        "category": "WebView Extension"
+        "command": "ai-content-developer.refresh",
+        "title": "Refresh AI Content Developer",
+        "category": "AI Content Developer"
       }
     ],
     "configuration": {
-      "title": "WebView Extension",
+      "title": "AI Content Developer",
       "properties": {
-        "vscode-webview-extension.enableDebugMode": {
+        "ai-content-developer.enableDebugMode": {
           "type": "boolean",
           "default": false,
           "description": "Enable debug mode for the extension"
         },
-        "vscode-webview-extension.theme": {
+        "ai-content-developer.theme": {
           "type": "string",
           "default": "auto",
           "enum": [
@@ -57,7 +57,7 @@
           ],
           "description": "Color theme for the webview"
         },
-        "vscode-webview-extension.githubToken": {
+        "ai-content-developer.githubToken": {
           "type": "string",
           "default": "",
           "description": "GitHub personal access token for fetching PR information (optional)",
@@ -67,8 +67,8 @@
     },
     "chatParticipants": [
       {
-        "id": "vscode-webview-extension.content-creator",
-        "fullName": "Content Creator",
+        "id": "ai-content-developer.content-creator",
+        "fullName": "AI Content Developer",
         "name": "content-creator",
         "description": "Create professional technical documentation with AI assistance",
         "isSticky": true
@@ -77,8 +77,8 @@
     "menus": {
       "view/title": [
         {
-          "command": "vscode-webview-extension.refresh",
-          "when": "view == webviewPanel",
+          "command": "ai-content-developer.refresh",
+          "when": "view == aiContentDeveloper",
           "group": "navigation"
         }
       ]
