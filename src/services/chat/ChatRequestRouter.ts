@@ -44,16 +44,40 @@ export class ChatRequestRouter {
         return await this.helpResponder.sendHelpResponse(stream);
       }
 
+      // Check if this is a workflow start or continuation
+      const isWorkflowStart = userPrompt.includes('[WORKFLOW START]');
+      const isWorkflowContinue = userPrompt.includes('[WORKFLOW CONTINUE]');
+      
       // Check for workflow options stored globally (from webview)
       const workflowOptions = (global as any).currentWorkflowOptions as WorkflowOptions | undefined;
       
-      if (workflowOptions) {
-        // Clear the global options after retrieving
-        (global as any).currentWorkflowOptions = undefined;
+      if (workflowOptions || isWorkflowStart) {
+        // This is the start of a new workflow
+        if (workflowOptions) {
+          // Store in global state for persistence across turns
+          (global as any).activeWorkflow = {
+            options: workflowOptions,
+            currentTurn: 1,
+            totalTurns: 4,
+            previousOutputs: [],
+            startTime: Date.now()
+          };
+          // Clear the initial options
+          (global as any).currentWorkflowOptions = undefined;
+        }
         
-        // Execute workflow with options from webview
-        const result = await this.promptExecutor.executeSequential(
-          workflowOptions,
+        // Execute the current turn
+        const result = await this.promptExecutor.executeSingleTurn(
+          request,
+          chatContext,
+          stream,
+          token
+        );
+        
+        return this.handleWorkflowResult(result, stream);
+      } else if (isWorkflowContinue) {
+        // This is a continuation of an existing workflow
+        const result = await this.promptExecutor.executeSingleTurn(
           request,
           chatContext,
           stream,
@@ -62,15 +86,21 @@ export class ChatRequestRouter {
         
         return this.handleWorkflowResult(result, stream);
       } else {
-        // Direct chat request - use the prompt as the content goal
-        const options: WorkflowOptions = {
-          contentGoal: userPrompt,
-          inputs: [], // No inputs for direct chat requests
-          interactiveMode: false, // Default to automated mode for direct requests
+        // Direct chat request without workflow markers
+        // Set up as a simple single-prompt workflow
+        (global as any).activeWorkflow = {
+          options: {
+            contentGoal: userPrompt,
+            inputs: [],
+            interactiveMode: false
+          },
+          currentTurn: 1,
+          totalTurns: 4,
+          previousOutputs: [],
+          startTime: Date.now()
         };
         
-        const result = await this.promptExecutor.executeSequential(
-          options,
+        const result = await this.promptExecutor.executeSingleTurn(
           request,
           chatContext,
           stream,

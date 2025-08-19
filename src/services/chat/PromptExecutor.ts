@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { ExtensionContext, WorkflowOptions } from '../../types/ExtensionContext';
 
 /**
- * Executes prompts sequentially through Copilot
+ * Executes prompts in a true multi-turn conversation with Copilot
  */
 export class PromptExecutor {
   private promptsPath: string;
@@ -53,221 +53,162 @@ export class PromptExecutor {
   }
 
   /**
-   * Execute prompts sequentially with proper multi-turn conversation
+   * Execute a single turn of the multi-turn conversation
+   * This allows for true back-and-forth between chat participant and Copilot
    */
-  public async executeSequential(
-    options: WorkflowOptions,
+  public async executeSingleTurn(
     request: vscode.ChatRequest,
     chatContext: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
   ): Promise<any> {
-    const { contentGoal, inputs, interactiveMode } = options;
-    
-    // Log conversation history for context awareness
-    if (chatContext.history && chatContext.history.length > 0) {
-      this.context.logger.info(`Conversation history: ${chatContext.history.length} previous turns`);
-      // We could use history for enhanced context, but for now we'll rely on our sequential approach
+    // Get the active workflow state
+    const workflow = (global as any).activeWorkflow;
+    if (!workflow) {
+      throw new Error('No active workflow found');
     }
-    
-    // Process inputs first if any
-    let inputContext = '';
-    if (inputs && inputs.length > 0) {
+
+    const { options, currentTurn, totalTurns, previousOutputs } = workflow;
+    const { contentGoal, inputs, interactiveMode } = options;
+
+    // Get the prompt for current turn
+    const prompt = this.prompts.get(currentTurn);
+    if (!prompt) {
+      throw new Error(`No prompt found for turn ${currentTurn}`);
+    }
+
+    stream.markdown(`## 💬 Turn ${currentTurn} of ${totalTurns}: ${prompt.name}\n\n`);
+
+    // Process inputs on first turn
+    let contextForPrompt = contentGoal;
+    if (currentTurn === 1 && inputs && inputs.length > 0) {
       const { InputHandlerService } = await import('../InputHandlerService');
-      const { InputType } = await import('../../models/InputModels');
       const inputHandler = new InputHandlerService(this.context);
       
-      stream.markdown('## 📁 Processing Inputs\n\n');
+      stream.markdown('### 📁 Processing Input Files\n\n');
       
-      // Convert inputs to InputSource format
-      const inputSources = inputs.map(input => ({
+      const inputSources = inputs.map((input: any) => ({
         id: input.id,
         name: input.name,
-        type: input.type as any, // Type will be handled by InputHandlerService
+        type: input.type as any,
         uri: input.uri
       }));
       
       const processedInputs = await inputHandler.processInputs(inputSources);
-      
-      inputContext = processedInputs.map(p => 
-        `### ${p.source.name}\n${p.extractedContent}\n`
+      const inputContext = processedInputs.map(p => 
+        `### ${p.source.name}\n\`\`\`\n${p.extractedContent}\n\`\`\`\n`
       ).join('\n---\n');
       
+      contextForPrompt = `${contentGoal}\n\n## Input Sources:\n${inputContext}`;
       stream.markdown(`✅ Processed ${inputs.length} input(s)\n\n`);
     }
-    
-    // Combine content goal with input context
-    const fullContext = inputContext 
-      ? `${contentGoal}\n\n## Input Sources:\n${inputContext}`
-      : contentGoal;
-    
-    let previousOutput = fullContext;
-    let results: any = {};
 
-    stream.markdown('## 🎭 AI Conversation: Content Creation\n\n');
-    stream.markdown('> *Starting a multi-turn conversation between AI Content Developer and Copilot...*\n\n');
-    stream.markdown(`**📋 Goal:** ${contentGoal}\n`);
-    if (inputs.length > 0) {
-      stream.markdown(`**📎 Input Sources:** ${inputs.length} file(s) provided\n`);
+    // Get previous output for context (if not first turn)
+    const previousOutput = currentTurn > 1 && previousOutputs.length > 0 
+      ? previousOutputs[previousOutputs.length - 1]
+      : contextForPrompt;
+
+    // Build and send the prompt
+    let promptContent = prompt.content;
+    promptContent = promptContent.replace(/\{\{CONTENT_REQUEST\}\}/g, contextForPrompt);
+    promptContent = promptContent.replace(/\{\{PREVIOUS_OUTPUT\}\}/g, previousOutput);
+
+    // Send prompt to monitor if callback is set
+    if (this.updateCallback) {
+      this.updateCallback('copilotInput', {
+        step: currentTurn,
+        content: promptContent
+      });
     }
-    stream.markdown(`**💬 Conversation Turns:** ${this.prompts.size}\n`);
-    stream.markdown(`**⚙️ Mode:** ${interactiveMode ? 'Interactive (you control each turn)' : 'Automated (continuous conversation)'}\n`);
-    stream.markdown(`**🔄 Execution:** Sequential (each response feeds into the next prompt)\n\n`);
-    stream.markdown('---\n\n');
+
+    // Show what we're sending
+    stream.markdown('### 📤 Sending to Copilot:\n\n');
     
-    stream.markdown('> 📌 **Note:** Each prompt is sent individually, waiting for Copilot\'s complete response before proceeding to the next turn.\n\n');
-    await this.delay(1000); // Initial pause to set the conversational tone
-
-    // Sort prompts by order and execute
-    const sortedPrompts = Array.from(this.prompts.entries()).sort((a, b) => a[0] - b[0]);
-
-    for (const [order, prompt] of sortedPrompts) {
-      if (token.isCancellationRequested) {
-        stream.markdown('\n⚠️ **Workflow cancelled by user**\n');
-        break;
-      }
-
-      // Add visual separation and delay between conversation turns
-      if (order > 1) {
-        stream.markdown('\n---\n\n');
-        await this.delay(800); // Pause between turns for conversational feel
-      }
-
-      // Show conversation turn header with enhanced progress
-      stream.markdown(`### 💬 Conversation Turn ${order} of ${sortedPrompts.length}\n`);
-      stream.markdown(`**Topic:** ${prompt.name}\n\n`);
+    // In interactive mode, show the prompt and wait for confirmation
+    if (interactiveMode) {
+      stream.markdown('```markdown\n' + promptContent.substring(0, 500) + '...\n```\n\n');
+      stream.markdown('**Interactive Mode**: Review the prompt above.\n\n');
       
-      // Enhanced progress reporting
-      stream.progress(`Turn ${order}/${sortedPrompts.length}: ${prompt.name}`);
-
-      // Replace placeholders in prompt
-      let promptContent = prompt.content;
-      promptContent = promptContent.replace(/\{\{CONTENT_REQUEST\}\}/g, contentGoal);
-      promptContent = promptContent.replace(/\{\{PREVIOUS_OUTPUT\}\}/g, previousOutput);
-
-      // In interactive mode, allow user to modify the prompt
-      if (interactiveMode) {
-        stream.markdown('**📝 Draft prompt:**\n');
-        stream.markdown('```markdown\n' + promptContent + '\n```\n');
-        
-        // Create a button to continue or modify
-        stream.button({
-          command: 'ai-content-developer.continueWorkflow',
-          title: 'Send this prompt',
-        });
-        
-        stream.button({
-          command: 'ai-content-developer.modifyPrompt',
-          title: 'Modify before sending',
-        });
-        
-        stream.markdown('\n**⏸️ Waiting for your decision...**\n\n');
-        
-        // Wait for user interaction (simplified for now)
-        await this.waitForUserInteraction();
-      }
-
-      // Show the AI Content Developer sending the message
-      stream.markdown('**🤖 AI Content Developer:**\n');
-      stream.markdown('> *Sending prompt to Copilot...*\n\n');
-      await this.delay(300);
-
-      // Send prompt to monitor
-      if (this.updateCallback) {
-        this.updateCallback('copilotInput', {
-          step: order,
-          content: promptContent
-        });
-      }
-
-      // Execute the prompt using Copilot
-      try {
-        // Show Copilot is typing/thinking
-        stream.markdown('**🧠 Copilot:**\n');
-        stream.markdown('> *Thinking...*\n\n');
-        await this.delay(500);
-        
-        // Clear the "thinking" message and show actual response
-        stream.markdown('**🧠 Copilot Response:**\n\n');
-        
-        // Log that we're sending this specific prompt
-        this.context.logger.info(`Sending Turn ${order}: ${prompt.name}`);
-        
-        // CRITICAL: Wait for complete response before proceeding
-        // This ensures true multi-turn conversation
-        const result = await this.executeSinglePrompt(
-          promptContent,
-          request,
-          stream,
-          token,
-          order
-        );
-        
-        // Verify we got a complete response
-        this.context.logger.info(`Turn ${order} complete. Response length: ${result.length} chars`);
-
-        // Store result
-        results[`step${order}`] = {
-          name: prompt.name,
-          output: result,
-        };
-
-        // Update previous output for next prompt - this is the key to multi-turn
-        previousOutput = result;
-        
-        // Log that this response will be used as context for next turn
-        if (order < sortedPrompts.length) {
-          this.context.logger.info(`Response from Turn ${order} will be used as context for Turn ${order + 1}`);
-        }
-
-        // Add completion marker with conversational pause
-        await this.delay(800);
-        stream.markdown(`\n---\n`);
-        stream.markdown(`✅ **Turn ${order} Complete**\n`);
-        stream.markdown(`📊 *Response captured: ${result.length} characters*\n`);
-        
-        // If not the last prompt, indicate the conversation continues
-        if (order < sortedPrompts.length) {
-          await this.delay(600);
-          stream.markdown(`\n🔄 *AI Content Developer is analyzing Copilot's response...*\n`);
-          await this.delay(400);
-          stream.markdown(`📝 *Preparing Turn ${order + 1} with context from Turn ${order}...*\n`);
-          await this.delay(400);
-        }
-      } catch (error) {
-        stream.markdown(`❌ **Failed:** ${prompt.name}\n`);
-        stream.markdown(`Error: ${error instanceof Error ? error.message : String(error)}\n\n`);
-        
-        if (!interactiveMode) {
-          // In automated mode, stop on error
-          throw error;
-        }
-        
-        // In interactive mode, allow retry
-        stream.button({
-          command: 'ai-content-developer.retryStep',
-          arguments: [order],
-          title: 'Retry this step',
-        });
-        
-        stream.button({
-          command: 'ai-content-developer.skipStep',
-          arguments: [order],
-          title: 'Skip this step',
-        });
-      }
+      // Add buttons for user control
+      stream.button({
+        command: 'ai-content-developer.continueWorkflow',
+        title: '▶️ Continue with this prompt',
+      });
+      
+      stream.button({
+        command: 'ai-content-developer.modifyPrompt',
+        title: '✏️ Modify prompt',
+      });
+      
+      stream.button({
+        command: 'ai-content-developer.skipStep',
+        title: '⏭️ Skip this step',
+      });
+      
+      return { success: true, waitingForUser: true };
     }
 
-    // Generate final documentation
-    const finalContent = previousOutput;
+    // Send prompt to Copilot
+    stream.markdown('### 🧠 Copilot Response:\n\n');
+    
+    const result = await this.executeSinglePrompt(
+      promptContent,
+      request,
+      stream,
+      token,
+      currentTurn
+    );
+
+    // Store the result for next turn
+    workflow.previousOutputs.push(result);
+    workflow.currentTurn++;
+
+    // Check if we need to continue
+    if (currentTurn < totalTurns) {
+      stream.markdown('\n---\n');
+      stream.markdown(`✅ **Turn ${currentTurn} Complete**\n\n`);
+      
+      if (!interactiveMode) {
+        // Automatically trigger next turn
+        stream.markdown('🔄 *Continuing to next turn...*\n\n');
+        
+        // Schedule the next turn - THIS IS THE KEY TO TRUE MULTI-TURN
+        setTimeout(async () => {
+          await vscode.commands.executeCommand('type', { 
+            text: '@content-creator [WORKFLOW CONTINUE]\nContinue with turn ' + (currentTurn + 1) 
+          });
+          await vscode.commands.executeCommand('workbench.action.chat.submit');
+        }, 1000);
+      } else {
+        stream.markdown('**Interactive Mode**: Ready for next turn.\n\n');
+        stream.button({
+          command: 'ai-content-developer.nextTurn',
+          title: '➡️ Proceed to Turn ' + (currentTurn + 1),
+        });
+      }
+    } else {
+      // Workflow complete - generate final documentation
+      await this.completeWorkflow(stream, contentGoal, result);
+      // Clear the workflow state
+      (global as any).activeWorkflow = null;
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Complete the workflow and save documentation
+   */
+  private async completeWorkflow(
+    stream: vscode.ChatResponseStream,
+    contentGoal: string,
+    finalContent: string
+  ): Promise<void> {
     const fileName = this.generateFileName(contentGoal);
     const filePath = await this.saveDocumentation(fileName, finalContent);
 
-    // Final conversation wrap-up
-    await this.delay(1000);
     stream.markdown('\n---\n\n');
-    stream.markdown('## 🎉 Conversation Complete!\n\n');
-    stream.markdown('> *The AI Content Developer and Copilot have finished their collaborative discussion.*\n\n');
+    stream.markdown('## 🎉 Workflow Complete!\n\n');
     stream.markdown(`📄 **Documentation saved to:** \`${filePath}\`\n\n`);
 
     // Add action buttons
@@ -279,47 +220,27 @@ export class PromptExecutor {
 
     stream.button({
       command: 'ai-content-developer.openWebview',
-      title: '➕ Start New Conversation',
+      title: '➕ Start New Workflow',
     });
 
-    // Add follow-up questions for enhanced interaction
+    // Add follow-up suggestions
     stream.markdown('\n### 💡 Suggested Follow-ups:\n\n');
     
     stream.button({
       command: 'ai-content-developer.enhance',
       arguments: ['add-examples'],
-      title: '📝 Add code examples to the documentation',
+      title: '📝 Add code examples',
     });
     
     stream.button({
       command: 'ai-content-developer.enhance',
       arguments: ['add-diagrams'],
-      title: '📊 Add diagrams and visual aids',
+      title: '📊 Add diagrams',
     });
-    
-    stream.button({
-      command: 'ai-content-developer.enhance',
-      arguments: ['improve-structure'],
-      title: '🔧 Improve document structure and formatting',
-    });
-    
-    stream.button({
-      command: 'ai-content-developer.enhance',
-      arguments: ['add-testing'],
-      title: '🧪 Add testing documentation',
-    });
-
-    return {
-      success: true,
-      filePath,
-      results,
-    };
   }
 
   /**
-   * Execute a single prompt using Copilot and wait for complete response
-   * CRITICAL: This method MUST complete fully before returning to ensure
-   * proper multi-turn conversation sequencing
+   * Execute a single prompt and wait for complete response
    */
   private async executeSinglePrompt(
     prompt: string,
@@ -328,7 +249,7 @@ export class PromptExecutor {
     token: vscode.CancellationToken,
     step?: number
   ): Promise<string> {
-    // Use Copilot's language model via the chat request
+    // Use Copilot's language model
     const messages = [
       vscode.LanguageModelChatMessage.User(prompt)
     ];
@@ -342,55 +263,27 @@ export class PromptExecutor {
       throw new Error('No Copilot model available');
     }
 
-    // Log that we're starting to send this prompt
     this.context.logger.info(`[Turn ${step}] Sending prompt to Copilot...`);
 
     const chatResponse = await model[0].sendRequest(messages, {}, token);
     let result = '';
-    let buffer = '';
-    let lastFlush = Date.now();
-    const FLUSH_INTERVAL = 50; // Flush every 50ms for smoother streaming
 
-    // Stream the response - this loop MUST complete before we proceed
+    // Stream the response
     for await (const fragment of chatResponse.text) {
       result += fragment;
-      buffer += fragment;
+      stream.markdown(fragment);
       
-      // Batch fragments for smoother display
-      const now = Date.now();
-      if (now - lastFlush >= FLUSH_INTERVAL || fragment.includes('\n')) {
-        stream.markdown(buffer);
-        
-        // Send streaming output to monitor
-        if (this.updateCallback) {
-          this.updateCallback('copilotOutput', {
-            step,
-            content: buffer,
-            streaming: true
-          });
-        }
-        
-        buffer = '';
-        lastFlush = now;
-        
-        // Tiny delay for more natural feel
-        await this.delay(10);
-      }
-    }
-
-    // Flush any remaining buffer
-    if (buffer) {
-      stream.markdown(buffer);
+      // Send to monitor if callback is set
       if (this.updateCallback) {
         this.updateCallback('copilotOutput', {
           step,
-          content: buffer,
+          content: fragment,
           streaming: true
         });
       }
     }
 
-    // Send final complete signal
+    // Send complete signal to monitor
     if (this.updateCallback) {
       this.updateCallback('copilotOutput', {
         step,
@@ -399,30 +292,32 @@ export class PromptExecutor {
       });
     }
 
-    // Log that the stream is complete and we have the full response
-    this.context.logger.info(`[Turn ${step}] Response stream complete. Total length: ${result.length} chars`);
-    this.context.logger.info(`[Turn ${step}] This response will be passed as context to the next turn`);
+    this.context.logger.info(`[Turn ${step}] Response complete. Length: ${result.length} chars`);
 
-    // IMPORTANT: We return the complete response only after the stream has finished
-    // This ensures proper sequencing for multi-turn conversation
     return result;
   }
 
   /**
-   * Wait for user interaction in interactive mode
+   * DEPRECATED: Use executeSingleTurn for true multi-turn conversation
+   * This method is kept for backward compatibility only
    */
-  private async waitForUserInteraction(): Promise<void> {
-    // This is a simplified version - in production, you'd implement proper event handling
-    return new Promise((resolve) => {
-      setTimeout(resolve, 100); // Short delay for now
-    });
-  }
-
-  /**
-   * Add delay for conversational pacing
-   */
-  private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  public async executeSequential(
+    options: WorkflowOptions,
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<any> {
+    // Set up workflow state and execute first turn
+    (global as any).activeWorkflow = {
+      options,
+      currentTurn: 1,
+      totalTurns: this.prompts.size,
+      previousOutputs: [],
+      startTime: Date.now()
+    };
+    
+    return this.executeSingleTurn(request, chatContext, stream, token);
   }
 
   /**
@@ -448,16 +343,17 @@ export class PromptExecutor {
       throw new Error('No workspace folder open');
     }
 
-    const docsPath = path.join(workspaceFolders[0].uri.fsPath, 'docs');
+    const docsFolder = path.join(workspaceFolders[0].uri.fsPath, 'generated-docs');
     
-    // Create docs directory if it doesn't exist
-    if (!fs.existsSync(docsPath)) {
-      fs.mkdirSync(docsPath, { recursive: true });
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(docsFolder)) {
+      fs.mkdirSync(docsFolder, { recursive: true });
     }
 
-    const filePath = path.join(docsPath, fileName);
+    const filePath = path.join(docsFolder, fileName);
     fs.writeFileSync(filePath, content, 'utf8');
-    
+
+    this.context.logger.info(`Documentation saved to: ${filePath}`);
     return filePath;
   }
 }

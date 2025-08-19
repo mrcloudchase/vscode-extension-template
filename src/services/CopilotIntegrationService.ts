@@ -53,8 +53,15 @@ export class CopilotIntegrationService {
       // Create a new chat
       await vscode.commands.executeCommand('workbench.action.chat.newChat');
       
-      // Send command to chat participant
-      const chatCommand = `@content-creator ${options.contentGoal}`;
+      // Build the initial chat command
+      // Include a marker that tells our participant this is a multi-turn workflow
+      let chatCommand = `@content-creator [WORKFLOW START]\n${options.contentGoal}`;
+      
+      // If there are inputs, include a summary in the chat message
+      if (options.inputs && options.inputs.length > 0) {
+        chatCommand += `\n\nInputs provided: ${options.inputs.length} file(s)`;
+        chatCommand += `\nMode: ${options.interactiveMode ? 'Interactive' : 'Automated'}`;
+      }
       
       // Type the command (simulate user input)
       await vscode.commands.executeCommand('type', { text: chatCommand });
