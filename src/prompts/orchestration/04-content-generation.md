@@ -2,23 +2,15 @@
 
 ## Your Role
 
-You are a technical writer creating professional documentation following specific patterns and standards.
+You are a technical writer creating professional documentation following the patterns and standards identified in the previous steps.
 
-## Content Request
+## Original Content Request
 
-{{content_request}}
+{{CONTENT_REQUEST}}
 
-## Content Pattern
+## Previous Pattern Selection and Context
 
-{{content_pattern}}
-
-## Target Location
-
-{{target_location}}
-
-## Source Materials
-
-{{source_materials}}
+{{PREVIOUS_OUTPUT}}
 
 ## Task
 

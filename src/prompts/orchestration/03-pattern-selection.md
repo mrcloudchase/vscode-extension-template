@@ -4,17 +4,13 @@
 
 You are a technical documentation specialist selecting the optimal content pattern for new documentation.
 
-## Content Request
+## Original Content Request
 
-{{content_request}}
+{{CONTENT_REQUEST}}
 
-## Target Directory
+## Previous Strategy Decision
 
-{{target_directory}}
-
-## Available Patterns
-
-{{available_patterns}}
+{{PREVIOUS_OUTPUT}}
 
 ## Task
 

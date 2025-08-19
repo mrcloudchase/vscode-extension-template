@@ -6,7 +6,7 @@ You're a senior technical documentation specialist.
 
 ## Content Request
 
-{{content_request}}
+{{CONTENT_REQUEST}}
 
 ## Task
 

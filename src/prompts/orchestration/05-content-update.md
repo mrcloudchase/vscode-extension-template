@@ -4,21 +4,13 @@
 
 You are a technical writer updating existing documentation with new information while maintaining consistency.
 
-## Content Request
+## Original Content Request
 
-{{content_request}}
+{{CONTENT_REQUEST}}
 
-## Existing Content
+## Previous Analysis and Context
 
-{{existing_content}}
-
-## New Materials
-
-{{new_materials}}
-
-## Update Requirements
-
-{{update_requirements}}
+{{PREVIOUS_OUTPUT}}
 
 ## Task
 

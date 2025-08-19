@@ -2,23 +2,15 @@
 
 ## Your Role
 
-You are a technical documentation specialist determining whether to create new content or update existing content based on this content request and the existing contents of the selected directory.
+You are a technical documentation specialist determining whether to create new content or update existing content based on this content request and the analysis from the previous step.
 
-## Content Request
+## Original Content Request
 
-{{contentRequest}}
+{{CONTENT_REQUEST}}
 
-## Selected Directory (from previous step)
+## Previous Analysis (Directory Selection Results)
 
-{{selectedDirectory}}
-
-## Directory Purpose (from previous step)
-
-{{directoryPurpose}}
-
-## Existing Files in Directory
-
-{{existingFiles}}
+{{PREVIOUS_OUTPUT}}
 
 ## Task
 
