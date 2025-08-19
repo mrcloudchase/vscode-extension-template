@@ -97,13 +97,16 @@ export class PromptExecutor {
     let previousOutput = fullContext;
     let results: any = {};
 
-    stream.markdown('## 🚀 Starting Sequential Workflow Execution\n\n');
-    stream.markdown(`**Content Goal:** ${contentGoal}\n`);
+    stream.markdown('## 🎭 AI Conversation: Content Creation\n\n');
+    stream.markdown('> *Starting a multi-turn conversation between AI Content Developer and Copilot...*\n\n');
+    stream.markdown(`**📋 Goal:** ${contentGoal}\n`);
     if (inputs.length > 0) {
-      stream.markdown(`**Inputs:** ${inputs.length} source(s)\n`);
+      stream.markdown(`**📎 Input Sources:** ${inputs.length} file(s) provided\n`);
     }
-    stream.markdown(`**Mode:** ${interactiveMode ? 'Interactive' : 'Automated'}\n\n`);
+    stream.markdown(`**💬 Conversation Turns:** ${this.prompts.size}\n`);
+    stream.markdown(`**⚙️ Mode:** ${interactiveMode ? 'Interactive (you control each turn)' : 'Automated (continuous conversation)'}\n\n`);
     stream.markdown('---\n\n');
+    await this.delay(1000); // Initial pause to set the conversational tone
 
     // Sort prompts by order and execute
     const sortedPrompts = Array.from(this.prompts.entries()).sort((a, b) => a[0] - b[0]);
@@ -114,13 +117,48 @@ export class PromptExecutor {
         break;
       }
 
-      stream.markdown(`### Step ${order}: ${prompt.name}\n\n`);
-      stream.progress(`Executing: ${prompt.name}...`);
+      // Add visual separation and delay between conversation turns
+      if (order > 1) {
+        stream.markdown('\n---\n\n');
+        await this.delay(800); // Pause between turns for conversational feel
+      }
+
+      // Show conversation turn header
+      stream.markdown(`### 💬 Conversation Turn ${order}\n`);
+      stream.markdown(`**Topic:** ${prompt.name}\n\n`);
+      stream.progress(`Preparing ${prompt.name}...`);
 
       // Replace placeholders in prompt
       let promptContent = prompt.content;
       promptContent = promptContent.replace(/\{\{CONTENT_REQUEST\}\}/g, contentGoal);
       promptContent = promptContent.replace(/\{\{PREVIOUS_OUTPUT\}\}/g, previousOutput);
+
+      // In interactive mode, allow user to modify the prompt
+      if (interactiveMode) {
+        stream.markdown('**📝 Draft prompt:**\n');
+        stream.markdown('```markdown\n' + promptContent + '\n```\n');
+        
+        // Create a button to continue or modify
+        stream.button({
+          command: 'ai-content-developer.continueWorkflow',
+          title: 'Send this prompt',
+        });
+        
+        stream.button({
+          command: 'ai-content-developer.modifyPrompt',
+          title: 'Modify before sending',
+        });
+        
+        stream.markdown('\n**⏸️ Waiting for your decision...**\n\n');
+        
+        // Wait for user interaction (simplified for now)
+        await this.waitForUserInteraction();
+      }
+
+      // Show the AI Content Developer sending the message
+      stream.markdown('**🤖 AI Content Developer:**\n');
+      stream.markdown('> *Sending prompt to Copilot...*\n\n');
+      await this.delay(300);
 
       // Send prompt to monitor
       if (this.updateCallback) {
@@ -130,30 +168,16 @@ export class PromptExecutor {
         });
       }
 
-      // In interactive mode, allow user to modify the prompt
-      if (interactiveMode) {
-        stream.markdown('**Current Prompt:**\n');
-        stream.markdown('```markdown\n' + promptContent + '\n```\n');
-        
-        // Create a button to continue or modify
-        stream.button({
-          command: 'ai-content-developer.continueWorkflow',
-          title: 'Continue with this prompt',
-        });
-        
-        stream.button({
-          command: 'ai-content-developer.modifyPrompt',
-          title: 'Modify prompt',
-        });
-        
-        stream.markdown('\n**Waiting for user input...**\n\n');
-        
-        // Wait for user interaction (simplified for now)
-        await this.waitForUserInteraction();
-      }
-
       // Execute the prompt using Copilot
       try {
+        // Show Copilot is typing/thinking
+        stream.markdown('**🧠 Copilot:**\n');
+        stream.markdown('> *Thinking...*\n\n');
+        await this.delay(500);
+        
+        // Clear the "thinking" message and show actual response
+        stream.markdown('**🧠 Copilot Response:**\n\n');
+        
         const result = await this.executeSinglePrompt(
           promptContent,
           request,
@@ -171,8 +195,17 @@ export class PromptExecutor {
         // Update previous output for next prompt
         previousOutput = result;
 
-        stream.markdown(`✅ **Completed:** ${prompt.name}\n\n`);
-        stream.markdown('---\n\n');
+        // Add completion marker with conversational pause
+        await this.delay(800);
+        stream.markdown(`\n---\n`);
+        stream.markdown(`✅ **Turn ${order} Complete**\n`);
+        
+        // If not the last prompt, indicate the conversation continues
+        if (order < sortedPrompts.length) {
+          await this.delay(600);
+          stream.markdown(`\n🔄 *AI Content Developer is preparing the next question based on Copilot's response...*\n`);
+          await this.delay(400);
+        }
       } catch (error) {
         stream.markdown(`❌ **Failed:** ${prompt.name}\n`);
         stream.markdown(`Error: ${error instanceof Error ? error.message : String(error)}\n\n`);
@@ -202,19 +235,23 @@ export class PromptExecutor {
     const fileName = this.generateFileName(contentGoal);
     const filePath = await this.saveDocumentation(fileName, finalContent);
 
-    stream.markdown('## ✨ Workflow Complete!\n\n');
+    // Final conversation wrap-up
+    await this.delay(1000);
+    stream.markdown('\n---\n\n');
+    stream.markdown('## 🎉 Conversation Complete!\n\n');
+    stream.markdown('> *The AI Content Developer and Copilot have finished their collaborative discussion.*\n\n');
     stream.markdown(`📄 **Documentation saved to:** \`${filePath}\`\n\n`);
 
     // Add action buttons
     stream.button({
       command: 'vscode.open',
       arguments: [vscode.Uri.file(filePath)],
-      title: 'Open Documentation',
+      title: '📖 Open Documentation',
     });
 
     stream.button({
       command: 'ai-content-developer.openWebview',
-      title: 'Create More Content',
+      title: '➕ Start New Conversation',
     });
 
     return {
@@ -250,16 +287,43 @@ export class PromptExecutor {
 
     const chatResponse = await model[0].sendRequest(messages, {}, token);
     let result = '';
+    let buffer = '';
+    let lastFlush = Date.now();
+    const FLUSH_INTERVAL = 50; // Flush every 50ms for smoother streaming
 
     for await (const fragment of chatResponse.text) {
       result += fragment;
-      stream.markdown(fragment);
+      buffer += fragment;
       
-      // Send streaming output to monitor
+      // Batch fragments for smoother display
+      const now = Date.now();
+      if (now - lastFlush >= FLUSH_INTERVAL || fragment.includes('\n')) {
+        stream.markdown(buffer);
+        
+        // Send streaming output to monitor
+        if (this.updateCallback) {
+          this.updateCallback('copilotOutput', {
+            step,
+            content: buffer,
+            streaming: true
+          });
+        }
+        
+        buffer = '';
+        lastFlush = now;
+        
+        // Tiny delay for more natural feel
+        await this.delay(10);
+      }
+    }
+
+    // Flush any remaining buffer
+    if (buffer) {
+      stream.markdown(buffer);
       if (this.updateCallback) {
         this.updateCallback('copilotOutput', {
           step,
-          content: fragment,
+          content: buffer,
           streaming: true
         });
       }
@@ -285,6 +349,13 @@ export class PromptExecutor {
     return new Promise((resolve) => {
       setTimeout(resolve, 100); // Short delay for now
     });
+  }
+
+  /**
+   * Add delay for conversational pacing
+   */
+  private async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
