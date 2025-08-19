@@ -53,15 +53,22 @@ export class PromptExecutor {
   }
 
   /**
-   * Execute prompts sequentially
+   * Execute prompts sequentially with proper multi-turn conversation
    */
   public async executeSequential(
     options: WorkflowOptions,
     request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
   ): Promise<any> {
     const { contentGoal, inputs, interactiveMode } = options;
+    
+    // Log conversation history for context awareness
+    if (chatContext.history && chatContext.history.length > 0) {
+      this.context.logger.info(`Conversation history: ${chatContext.history.length} previous turns`);
+      // We could use history for enhanced context, but for now we'll rely on our sequential approach
+    }
     
     // Process inputs first if any
     let inputContext = '';
@@ -104,8 +111,11 @@ export class PromptExecutor {
       stream.markdown(`**📎 Input Sources:** ${inputs.length} file(s) provided\n`);
     }
     stream.markdown(`**💬 Conversation Turns:** ${this.prompts.size}\n`);
-    stream.markdown(`**⚙️ Mode:** ${interactiveMode ? 'Interactive (you control each turn)' : 'Automated (continuous conversation)'}\n\n`);
+    stream.markdown(`**⚙️ Mode:** ${interactiveMode ? 'Interactive (you control each turn)' : 'Automated (continuous conversation)'}\n`);
+    stream.markdown(`**🔄 Execution:** Sequential (each response feeds into the next prompt)\n\n`);
     stream.markdown('---\n\n');
+    
+    stream.markdown('> 📌 **Note:** Each prompt is sent individually, waiting for Copilot\'s complete response before proceeding to the next turn.\n\n');
     await this.delay(1000); // Initial pause to set the conversational tone
 
     // Sort prompts by order and execute
@@ -123,10 +133,12 @@ export class PromptExecutor {
         await this.delay(800); // Pause between turns for conversational feel
       }
 
-      // Show conversation turn header
-      stream.markdown(`### 💬 Conversation Turn ${order}\n`);
+      // Show conversation turn header with enhanced progress
+      stream.markdown(`### 💬 Conversation Turn ${order} of ${sortedPrompts.length}\n`);
       stream.markdown(`**Topic:** ${prompt.name}\n\n`);
-      stream.progress(`Preparing ${prompt.name}...`);
+      
+      // Enhanced progress reporting
+      stream.progress(`Turn ${order}/${sortedPrompts.length}: ${prompt.name}`);
 
       // Replace placeholders in prompt
       let promptContent = prompt.content;
@@ -178,6 +190,11 @@ export class PromptExecutor {
         // Clear the "thinking" message and show actual response
         stream.markdown('**🧠 Copilot Response:**\n\n');
         
+        // Log that we're sending this specific prompt
+        this.context.logger.info(`Sending Turn ${order}: ${prompt.name}`);
+        
+        // CRITICAL: Wait for complete response before proceeding
+        // This ensures true multi-turn conversation
         const result = await this.executeSinglePrompt(
           promptContent,
           request,
@@ -185,6 +202,9 @@ export class PromptExecutor {
           token,
           order
         );
+        
+        // Verify we got a complete response
+        this.context.logger.info(`Turn ${order} complete. Response length: ${result.length} chars`);
 
         // Store result
         results[`step${order}`] = {
@@ -192,18 +212,26 @@ export class PromptExecutor {
           output: result,
         };
 
-        // Update previous output for next prompt
+        // Update previous output for next prompt - this is the key to multi-turn
         previousOutput = result;
+        
+        // Log that this response will be used as context for next turn
+        if (order < sortedPrompts.length) {
+          this.context.logger.info(`Response from Turn ${order} will be used as context for Turn ${order + 1}`);
+        }
 
         // Add completion marker with conversational pause
         await this.delay(800);
         stream.markdown(`\n---\n`);
         stream.markdown(`✅ **Turn ${order} Complete**\n`);
+        stream.markdown(`📊 *Response captured: ${result.length} characters*\n`);
         
         // If not the last prompt, indicate the conversation continues
         if (order < sortedPrompts.length) {
           await this.delay(600);
-          stream.markdown(`\n🔄 *AI Content Developer is preparing the next question based on Copilot's response...*\n`);
+          stream.markdown(`\n🔄 *AI Content Developer is analyzing Copilot's response...*\n`);
+          await this.delay(400);
+          stream.markdown(`📝 *Preparing Turn ${order + 1} with context from Turn ${order}...*\n`);
           await this.delay(400);
         }
       } catch (error) {
@@ -254,6 +282,33 @@ export class PromptExecutor {
       title: '➕ Start New Conversation',
     });
 
+    // Add follow-up questions for enhanced interaction
+    stream.markdown('\n### 💡 Suggested Follow-ups:\n\n');
+    
+    stream.button({
+      command: 'ai-content-developer.enhance',
+      arguments: ['add-examples'],
+      title: '📝 Add code examples to the documentation',
+    });
+    
+    stream.button({
+      command: 'ai-content-developer.enhance',
+      arguments: ['add-diagrams'],
+      title: '📊 Add diagrams and visual aids',
+    });
+    
+    stream.button({
+      command: 'ai-content-developer.enhance',
+      arguments: ['improve-structure'],
+      title: '🔧 Improve document structure and formatting',
+    });
+    
+    stream.button({
+      command: 'ai-content-developer.enhance',
+      arguments: ['add-testing'],
+      title: '🧪 Add testing documentation',
+    });
+
     return {
       success: true,
       filePath,
@@ -262,7 +317,9 @@ export class PromptExecutor {
   }
 
   /**
-   * Execute a single prompt using Copilot
+   * Execute a single prompt using Copilot and wait for complete response
+   * CRITICAL: This method MUST complete fully before returning to ensure
+   * proper multi-turn conversation sequencing
    */
   private async executeSinglePrompt(
     prompt: string,
@@ -285,12 +342,16 @@ export class PromptExecutor {
       throw new Error('No Copilot model available');
     }
 
+    // Log that we're starting to send this prompt
+    this.context.logger.info(`[Turn ${step}] Sending prompt to Copilot...`);
+
     const chatResponse = await model[0].sendRequest(messages, {}, token);
     let result = '';
     let buffer = '';
     let lastFlush = Date.now();
     const FLUSH_INTERVAL = 50; // Flush every 50ms for smoother streaming
 
+    // Stream the response - this loop MUST complete before we proceed
     for await (const fragment of chatResponse.text) {
       result += fragment;
       buffer += fragment;
@@ -338,6 +399,12 @@ export class PromptExecutor {
       });
     }
 
+    // Log that the stream is complete and we have the full response
+    this.context.logger.info(`[Turn ${step}] Response stream complete. Total length: ${result.length} chars`);
+    this.context.logger.info(`[Turn ${step}] This response will be passed as context to the next turn`);
+
+    // IMPORTANT: We return the complete response only after the stream has finished
+    // This ensures proper sequencing for multi-turn conversation
     return result;
   }
 

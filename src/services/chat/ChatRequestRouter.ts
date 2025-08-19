@@ -55,6 +55,7 @@ export class ChatRequestRouter {
         const result = await this.promptExecutor.executeSequential(
           workflowOptions,
           request,
+          chatContext,
           stream,
           token
         );
@@ -71,6 +72,7 @@ export class ChatRequestRouter {
         const result = await this.promptExecutor.executeSequential(
           options,
           request,
+          chatContext,
           stream,
           token
         );
