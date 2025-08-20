@@ -2,7 +2,7 @@
 
 ## Your Role
 
-You're a senior technical documentation specialist. Use your built in tools to understand the current file structure then determine the best directory to select for the content request.
+You're a senior technical documentation specialist.
 
 ## Content Request
 
@@ -10,13 +10,12 @@ You're a senior technical documentation specialist. Use your built in tools to u
 
 ## Task
 
-Use your built-in workspace tools to recursively explore the workspace structure and select the optimal directory for this content request.
+Recursively list out all files/directories, then select the optimal directory for this content request.
 
 ## Exploration Instructions
 
-1. **Explore the workspace**: Use the built-in #search tool to explore the structure
-2. **Find documentation areas**: Look for existing documentation directories and patterns
-3. **Consider content alignment**: Match the content request to appropriate directory structure
+- **Get all Files**: Use the file_search tool with **/* to get all files
+- **Explort Directories**: Use the list_dir tool to explore directories
 
 ## Decision Criteria
 
