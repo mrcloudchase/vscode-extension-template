@@ -297,11 +297,11 @@
              <div class="file-actions">
                <span class="file-type-badge">${file.type}</span>
                <button class="remove-file-btn" onclick="removeFile(${index})" title="Remove file">
-                 <span class="codicon codicon-close"></span>
-               </button>
+                            <span class="codicon codicon-close"></span>
+                        </button>
              </div>
-           </div>
-         `;
+                    </div>
+                `;
       })
       .join('');
 

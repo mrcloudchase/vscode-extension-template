@@ -94,8 +94,10 @@ export class ContentGenerator {
     const result = await this.callLanguageModel(prompt);
 
     try {
-      return JSON.parse(result) as PatternSelection;
+      const jsonContent = this.extractJsonFromResponse(result);
+      return JSON.parse(jsonContent) as PatternSelection;
     } catch (error) {
+      this.context.logger.error('Pattern selection response:', result);
       throw new Error(`Failed to parse pattern selection result: ${error}`);
     }
   }
@@ -112,8 +114,10 @@ export class ContentGenerator {
     const result = await this.callLanguageModel(prompt);
 
     try {
-      return JSON.parse(result) as GeneratedContent;
+      const jsonContent = this.extractJsonFromResponse(result);
+      return JSON.parse(jsonContent) as GeneratedContent;
     } catch (error) {
+      this.context.logger.error('Content generation response:', result);
       throw new Error(`Failed to parse content generation result: ${error}`);
     }
   }
@@ -216,6 +220,29 @@ export class ContentGenerator {
     );
 
     return prompt;
+  }
+
+  /**
+   * Extract JSON from language model response (handles markdown code blocks)
+   */
+  private extractJsonFromResponse(response: string): string {
+    // Remove any leading/trailing whitespace
+    const trimmed = response.trim();
+
+    // Check if response is wrapped in markdown code blocks
+    const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      return codeBlockMatch[1].trim();
+    }
+
+    // Check if response starts and ends with JSON braces
+    const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return jsonMatch[0];
+    }
+
+    // Return as-is if no patterns match (might already be clean JSON)
+    return trimmed;
   }
 
   /**
