@@ -122,55 +122,38 @@ export class ContentGenerator {
    * Build pattern selection prompt
    */
   private buildPatternSelectionPrompt(request: ContentRequest, processedInputs: string): string {
-    const availablePatterns = this.contentStandards.contentTypes.map((type: any) => ({
+    // Load the actual prompt template
+    const promptPath = path.join(
+      this.context.vscodeContext.extensionPath,
+      'src',
+      'prompts',
+      'orchestration',
+      '03-pattern-selection.md'
+    );
+
+    let promptTemplate = '';
+    try {
+      promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    } catch (error) {
+      this.context.logger.error('Failed to load pattern selection prompt', error);
+      throw new Error('Pattern selection prompt not found');
+    }
+
+    // Extract only essential pattern information for selection
+    const patternOptions = this.contentStandards.contentTypes.map((type: any) => ({
       id: type.id,
       name: type.name,
       purpose: type.purpose,
       description: type.description,
     }));
 
-    return `# Content Pattern Selection
+    // Replace template variables
+    let prompt = promptTemplate;
+    prompt = prompt.replace(/\{\{CONTENT_REQUEST\}\}/g, request.contentGoal);
+    prompt = prompt.replace(/\{\{INPUT_MATERIALS\}\}/g, processedInputs);
+    prompt = prompt.replace(/\{\{CONTENT_STANDARDS\}\}/g, JSON.stringify(patternOptions, null, 2));
 
-## Your Role
-You are a technical documentation specialist selecting the optimal content pattern for new documentation.
-
-## Original Content Request
-${request.contentGoal}
-
-## Input Materials
-${processedInputs}
-
-## Available Content Patterns
-${JSON.stringify(availablePatterns, null, 2)}
-
-## Task
-Select the most appropriate content pattern based on user intent and content requirements.
-
-## Pattern Selection Criteria
-1. **User Intent**: What is the user trying to achieve?
-2. **Time Investment**: How quickly does the user need results?
-3. **Content Depth**: How detailed should the content be?
-4. **Audience Level**: Technical expertise of readers
-5. **Learning Style**: Step-by-step vs conceptual understanding
-
-## Required Output Format
-You MUST respond with ONLY a valid JSON object in this exact format:
-
-{
-  "patternId": "string - Must match exactly one of the available pattern IDs",
-  "patternName": "string - Human-readable name of the selected pattern", 
-  "reasoning": "string - Detailed explanation of why this pattern best serves user intent",
-  "requiredSections": ["string array - Section headings required by this pattern"],
-  "audienceAlignment": "string - Description of how pattern aligns with target audience",
-  "alternativePatterns": [
-    {
-      "patternId": "string - Alternative pattern ID",
-      "reason": "string - Why this alternative was considered but not selected"
-    }
-  ]
-}
-
-Return ONLY the JSON object, no additional text.`;
+    return prompt;
   }
 
   /**
@@ -181,61 +164,58 @@ Return ONLY the JSON object, no additional text.`;
     processedInputs: string,
     patternSelection: PatternSelection
   ): string {
+    // Load the actual prompt template
+    const promptPath = path.join(
+      this.context.vscodeContext.extensionPath,
+      'src',
+      'prompts',
+      'orchestration',
+      '04-content-generation.md'
+    );
+
+    let promptTemplate = '';
+    try {
+      promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    } catch (error) {
+      this.context.logger.error('Failed to load content generation prompt', error);
+      throw new Error('Content generation prompt not found');
+    }
+
     const selectedPattern = this.contentStandards.contentTypes.find(
       (type: any) => type.id === patternSelection.patternId
     );
 
-    return `# Content Generation
+    if (!selectedPattern) {
+      throw new Error(
+        `Selected pattern '${patternSelection.patternId}' not found in content standards`
+      );
+    }
 
-## Your Role
-You are a technical writer creating professional documentation following Microsoft documentation standards.
+    // Replace template variables with optimized context
+    let prompt = promptTemplate;
+    prompt = prompt.replace(/\{\{CONTENT_REQUEST\}\}/g, request.contentGoal);
 
-## Original Content Request
-${request.contentGoal}
+    // Pass input materials directly
+    prompt = prompt.replace(/\{\{INPUT_MATERIALS\}\}/g, processedInputs);
 
-## Input Materials
-${processedInputs}
+    // Pass markdown template separately for clear visibility
+    prompt = prompt.replace(/\{\{MARKDOWN_TEMPLATE\}\}/g, selectedPattern.markdownTemplate);
 
-## Selected Pattern
-${JSON.stringify(patternSelection, null, 2)}
+    // Pass content standards separately for clarity
+    prompt = prompt.replace(
+      /\{\{CORE_GUIDELINES\}\}/g,
+      JSON.stringify(this.contentStandards.coreGuidelines, null, 2)
+    );
+    prompt = prompt.replace(
+      /\{\{CUSTOMER_INTENT\}\}/g,
+      JSON.stringify(this.contentStandards.customerIntent, null, 2)
+    );
+    prompt = prompt.replace(
+      /\{\{FORMATTING_ELEMENTS\}\}/g,
+      JSON.stringify(this.contentStandards.formattingElements, null, 2)
+    );
 
-## Content Standards
-${JSON.stringify(selectedPattern, null, 2)}
-
-## Task
-Generate complete, professional documentation following the specified pattern and Microsoft standards.
-
-## Content Requirements
-- Follow the exact pattern structure provided
-- Include all required sections in order
-- Use proper Markdown formatting
-- Include code examples where appropriate
-- Follow Microsoft documentation formatting standards
-- Use active voice and present tense
-- Include proper front matter with current date
-
-## Required Output Format
-You MUST respond with ONLY a valid JSON object in this exact format:
-
-{
-  "content": "string - Complete Markdown document with proper formatting",
-  "title": "string - Clear, descriptive document title",
-  "filename": "string - Suggested filename ending in .md",
-  "frontMatter": {
-    "title": "string - Document title for YAML front matter",
-    "description": "string - Brief description for metadata",
-    "author": "string - Use 'content-creator'",
-    "ms.topic": "string - Topic type matching the content pattern",
-    "ms.date": "string - Current date in YYYY-MM-DD format"
-  },
-  "metadata": {
-    "wordCount": "number - Estimated word count",
-    "readingTime": "number - Estimated reading time in minutes",
-    "technicalLevel": "string - beginner|intermediate|advanced"
-  }
-}
-
-Return ONLY the JSON object, no additional text.`;
+    return prompt;
   }
 
   /**

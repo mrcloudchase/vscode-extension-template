@@ -8,13 +8,17 @@ You are a technical documentation specialist selecting the optimal content patte
 
 {{CONTENT_REQUEST}}
 
-## Previous Strategy Decision
+## Input Materials
 
-{{PREVIOUS_OUTPUT}}
+{{INPUT_MATERIALS}}
+
+## Available Content Patterns
+
+{{CONTENT_STANDARDS}}
 
 ## Task
 
-Select the most appropriate content pattern based on user intent and content requirements.
+Select the most appropriate content pattern based on user intent and content requirements from the available Microsoft documentation patterns.
 
 ## Pattern Selection Criteria
 
@@ -26,15 +30,13 @@ Select the most appropriate content pattern based on user intent and content req
 4. **Audience Level**: Technical expertise of readers
 5. **Learning Style**: Step-by-step vs conceptual understanding
 
-### Pattern Guidelines:
+### Available Patterns (from Microsoft Standards):
 
-- **overview**: High-level service/product introduction
-- **concept**: Deep technical understanding needed
-- **quickstart**: Immediate results in < 10 minutes
-- **howto**: Flexible task completion with options
-- **tutorial**: Guided learning experience
-- **technical-guide**: Comprehensive implementation details
-- **api-docs**: Developer integration reference
+- **overview**: For new customers. Explains the service/technology from a technical point of view
+- **concept**: In-depth explanation of functionality fundamental to understanding and use
+- **quickstart**: Get service/technology into hands of new customers in less than 10 minutes
+- **howto**: Procedural articles showing how to complete a task with optional information
+- **tutorial**: Scenario-based procedures for top customer tasks with guided learning
 
 ## Required Output Format
 
@@ -45,8 +47,6 @@ Select the most appropriate content pattern based on user intent and content req
   "patternId": "string - Must match exactly one of the available pattern IDs",
   "patternName": "string - Human-readable name of the selected pattern",
   "reasoning": "string - Detailed explanation of why this pattern best serves user intent",
-  "requiredSections": ["string array - Section headings required by this pattern"],
-  "audienceAlignment": "string - Description of how pattern aligns with target audience",
   "alternativePatterns": [
     {
       "patternId": "string - Alternative pattern ID",
@@ -63,8 +63,6 @@ Select the most appropriate content pattern based on user intent and content req
   "patternId": "quickstart",
   "patternName": "Quickstart Guide",
   "reasoning": "The user's goal 'create authentication in under 10 minutes' clearly indicates time-bounded implementation needs. The quickstart pattern is optimized for developers who need immediate working results to validate their integration approach. The provided source materials include working code examples perfect for a step-by-step quickstart flow. This pattern's procedural structure and validation steps match the user's expressed urgency and success criteria.",
-  "requiredSections": ["Prerequisites", "Procedure", "Validation", "Next Steps"],
-  "audienceAlignment": "Developers who need quick implementation success with minimal reading and maximum code examples",
   "alternativePatterns": [
     {
       "patternId": "howto",
@@ -77,6 +75,10 @@ Select the most appropriate content pattern based on user intent and content req
     {
       "patternId": "concept",
       "reason": "Wrong audience - too theoretical for implementation-focused developers"
+    },
+    {
+      "patternId": "overview",
+      "reason": "Too high-level for users who need specific implementation guidance"
     }
   ]
 }
@@ -87,6 +89,7 @@ You MUST respond with ONLY a valid JSON object in this exact format:
 ## Important
 
 - Return ONLY the JSON object, no additional text
-- patternId must match exactly one of the available pattern IDs
+- patternId must match exactly one of the available pattern IDs: overview, concept, quickstart, howto, tutorial
 - Base selection on user intent, not personal preference
-- Consider maintenance and scalability
+- Consider the specific purpose and audience for each Microsoft documentation pattern
+- Use the pattern descriptions and requirements from the provided content standards

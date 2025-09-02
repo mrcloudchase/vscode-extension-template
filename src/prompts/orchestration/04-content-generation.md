@@ -8,9 +8,27 @@ You are a technical writer creating professional documentation following the pat
 
 {{CONTENT_REQUEST}}
 
-## Previous Pattern Selection and Context
+## Input Materials
 
-{{PREVIOUS_OUTPUT}}
+{{INPUT_MATERIALS}}
+
+## Selected Pattern Template
+
+{{MARKDOWN_TEMPLATE}}
+
+## Microsoft Content Standards
+
+### Core Guidelines
+
+{{CORE_GUIDELINES}}
+
+### Customer Intent Format
+
+{{CUSTOMER_INTENT}}
+
+### Formatting Elements
+
+{{FORMATTING_ELEMENTS}}
 
 ## Task
 
@@ -20,18 +38,23 @@ Generate complete, professional documentation following the specified pattern an
 
 ### Structure:
 
-- Follow the exact pattern structure provided
-- Include all required sections in order
-- Use proper Markdown formatting
-- Include code examples where appropriate
+- **Use the MARKDOWN_TEMPLATE as your exact foundation** - Replace ALL bracketed placeholders with actual content
+- **Replace template placeholders** with relevant content:
+  - `[verb]` and `[noun]` with specific actions/topics from the content request
+  - `[Article description]` with a clear description
+  - `[your GitHub alias]` with "content-creator"
+  - `[mm/dd/yyyy]` with current date
+- **Follow the template's section structure** exactly as provided
+- **Use INPUT_MATERIALS** to inform the content of each section
+- **Apply FORMATTING_ELEMENTS** for Microsoft-specific styling
 
 ### Quality Standards:
 
-- Clear, concise technical writing
-- Active voice and present tense
-- Consistent terminology
-- Proper heading hierarchy
-- Actionable content
+- **Follow CORE_GUIDELINES exactly** as provided
+- **Include customer intent** in front matter using CUSTOMER_INTENT format
+- **Create actionable content** based on INPUT_MATERIALS
+- **Use Microsoft formatting** (notes, warnings, code blocks, etc.)
+- **Generate complete, ready-to-use documentation**
 
 ## Required Output Format
 
@@ -68,7 +91,7 @@ Generate complete, professional documentation following the specified pattern an
 {
   "content": "---\ntitle: \"Authentication Quickstart Guide\"\ndescription: \"Get authentication working in your app in under 10 minutes with OAuth 2.0 and JWT tokens\"\nauthor: \"content-creator\"\nms.topic: \"quickstart\"\nms.date: \"2024-01-15\"\n---\n\n# Authentication Quickstart Guide\n\nGet authentication working in your application in under 10 minutes using OAuth 2.0 with JWT tokens.\n\n## Prerequisites\n\nBefore you begin, ensure you have:\n\n- Node.js 18+ installed\n- An active developer account\n- API credentials (client ID and secret)\n\n## Procedure\n\n### Step 1: Install dependencies\n\n```bash\nnpm install jsonwebtoken passport passport-oauth2\n```\n\n### Step 2: Configure OAuth client\n\n```javascript\nconst passport = require('passport');\nconst OAuth2Strategy = require('passport-oauth2');\n\npassport.use(new OAuth2Strategy({\n  authorizationURL: 'https://api.example.com/oauth/authorize',\n  tokenURL: 'https://api.example.com/oauth/token',\n  clientID: process.env.CLIENT_ID,\n  clientSecret: process.env.CLIENT_SECRET,\n  callbackURL: '/auth/callback'\n}, (accessToken, refreshToken, profile, done) => {\n  return done(null, { accessToken, profile });\n}));\n```\n\n### Step 3: Add authentication routes\n\n```javascript\napp.get('/auth', passport.authenticate('oauth2'));\napp.get('/auth/callback', passport.authenticate('oauth2', {\n  successRedirect: '/dashboard',\n  failureRedirect: '/login'\n}));\n```\n\n## Validation\n\nTest your implementation:\n\n1. Navigate to `/auth` in your browser\n2. Complete the OAuth flow\n3. Verify redirection to `/dashboard`\n4. Check that user data is accessible\n\n## Next Steps\n\n- [Implement JWT refresh tokens](./jwt-refresh-tokens.md)\n- [Add role-based authorization](./role-based-auth.md)\n- [Secure API endpoints](./api-security.md)",
   "title": "Authentication Quickstart Guide",
-  "filename": "authentication-quickstart.md",
+  "filename": "<pattern-name>-authentication-quickstart.md",
   "frontMatter": {
     "title": "Authentication Quickstart Guide",
     "description": "Get authentication working in your app in under 10 minutes with OAuth 2.0 and JWT tokens",

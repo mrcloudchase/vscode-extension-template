@@ -65,6 +65,25 @@
       });
     }
 
+    // Suggestion chips
+    const suggestionChips = document.querySelectorAll('.suggestion-chip');
+    suggestionChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const suggestion = chip.getAttribute('data-suggestion');
+        if (suggestion && contentGoalInput) {
+          contentGoalInput.value = suggestion;
+          state.contentGoal = suggestion;
+          vscode.setState(state);
+
+          // Add visual feedback
+          chip.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            chip.style.transform = 'scale(1)';
+          }, 150);
+        }
+      });
+    });
+
     // Select files button
     const selectFilesBtn = document.getElementById('selectFiles');
     if (selectFilesBtn) {
@@ -167,7 +186,52 @@
    * Handle generation status updates
    */
   function handleGenerationStatus(payload) {
-    updateStatus(`${payload.step}: ${payload.message}`, 'info');
+    let statusMessage = payload.message;
+    let statusType = 'info';
+
+    // Enhanced status messages based on step
+    switch (payload.step) {
+      case 'processing':
+        statusMessage = '📁 Processing input files...';
+        break;
+      case 'pattern':
+        statusMessage = '🎯 Selecting optimal documentation pattern...';
+        break;
+      case 'generating':
+        statusMessage = '✨ Generating professional documentation...';
+        break;
+      case 'saving':
+        statusMessage = '💾 Saving to docs folder...';
+        break;
+      default:
+        statusMessage = payload.message;
+    }
+
+    updateStatus(statusMessage, statusType);
+
+    // Update workflow step indicators
+    updateWorkflowProgress(payload.step);
+  }
+
+  /**
+   * Update workflow progress indicators
+   */
+  function updateWorkflowProgress(currentStep) {
+    const steps = document.querySelectorAll('.workflow-step');
+    steps.forEach((step, index) => {
+      const stepNumber = step.querySelector('.step-number');
+      if (stepNumber) {
+        stepNumber.classList.remove('active', 'completed');
+
+        if (currentStep === 'pattern' && index === 0) {
+          stepNumber.classList.add('active');
+        } else if (currentStep === 'generating' && index === 1) {
+          stepNumber.classList.add('active');
+        } else if (currentStep === 'saving' && index === 1) {
+          stepNumber.classList.add('completed');
+        }
+      }
+    });
   }
 
   /**
@@ -208,26 +272,79 @@
     if (!filesContainer) return;
 
     if (state.inputs.length === 0) {
-      filesContainer.innerHTML = '<p>No files selected</p>';
+      filesContainer.innerHTML = `
+         <div class="placeholder-content">
+           <span class="codicon codicon-cloud-upload"></span>
+           <p class="placeholder-text">Drop files here or click "Add Files"</p>
+           <p class="placeholder-subtext">Supports: MD, PDF, Word, PowerPoint, Text files</p>
+         </div>
+       `;
       return;
     }
 
     const filesList = state.inputs
-      .map(
-        (file) =>
-          `<div class="file-item">
-                <span class="file-name">${file.name}</span>
-                <span class="file-type">${file.type}</span>
-            </div>`
-      )
+      .map((file, index) => {
+        const fileIcon = getFileIcon(file.type);
+        return `
+           <div class="file-item" data-index="${index}">
+             <div class="file-info">
+               <span class="file-icon codicon codicon-${fileIcon}"></span>
+               <div class="file-details">
+                 <span class="file-name">${file.name}</span>
+                 <span class="file-path">${file.type.toUpperCase()}</span>
+               </div>
+             </div>
+             <div class="file-actions">
+               <span class="file-type-badge">${file.type}</span>
+               <button class="remove-file-btn" onclick="removeFile(${index})" title="Remove file">
+                 <span class="codicon codicon-close"></span>
+               </button>
+             </div>
+           </div>
+         `;
+      })
       .join('');
 
     filesContainer.innerHTML = `
-            <div class="files-list">
-                ${filesList}
-            </div>
-        `;
+       <div class="files-list">
+         <div class="files-header">
+           <span class="files-count">${state.inputs.length} file${state.inputs.length !== 1 ? 's' : ''} selected</span>
+         </div>
+         ${filesList}
+       </div>
+     `;
   }
+
+  /**
+   * Get appropriate icon for file type
+   */
+  function getFileIcon(type) {
+    const iconMap = {
+      markdown: 'markdown',
+      word: 'file-text',
+      pdf: 'file-pdf',
+      powerpoint: 'file-media',
+      text: 'file-code',
+      image: 'file-media',
+      file: 'file',
+    };
+    return iconMap[type] || 'file';
+  }
+
+  /**
+   * Remove file from list
+   */
+  window.removeFile = function (index) {
+    state.inputs.splice(index, 1);
+    vscode.setState(state);
+    updateFilesList();
+
+    // Add removal animation
+    const fileItem = document.querySelector(`[data-index="${index}"]`);
+    if (fileItem) {
+      fileItem.style.animation = 'slideOutRight 0.3s ease-out';
+    }
+  };
 
   /**
    * Update UI with current state
@@ -260,15 +377,39 @@
    */
   function updateStatus(message, type = 'info') {
     const statusElement = document.getElementById('status');
-    if (statusElement) {
-      statusElement.textContent = message;
-      statusElement.className = `status ${type}`;
+    const statusText = statusElement?.querySelector('.status-text');
+    const statusIcon = statusElement?.querySelector('.status-icon');
+    const progressBar = statusElement?.querySelector('.progress-bar');
+
+    if (statusElement && statusText) {
+      statusText.textContent = message;
+      statusElement.className = `status-display ${type}`;
+
+      // Update icon based on type
+      if (statusIcon) {
+        let iconClass = 'codicon-info';
+        if (type === 'success') iconClass = 'codicon-check';
+        else if (type === 'error') iconClass = 'codicon-error';
+        else if (type === 'warning') iconClass = 'codicon-warning';
+
+        statusIcon.className = `status-icon codicon ${iconClass}`;
+      }
+
+      // Show progress animation for processing states
+      if (progressBar) {
+        if (type === 'info' && message.includes('...')) {
+          progressBar.style.animation = 'progress 2s infinite linear';
+        } else {
+          progressBar.style.animation = 'none';
+        }
+      }
 
       // Clear status after 5 seconds for non-error messages
       if (type !== 'error') {
         setTimeout(() => {
-          statusElement.textContent = '';
-          statusElement.className = 'status';
+          statusText.textContent = '';
+          statusElement.className = 'status-display';
+          if (progressBar) progressBar.style.animation = 'none';
         }, 5000);
       }
     }

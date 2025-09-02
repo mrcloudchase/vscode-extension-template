@@ -1,67 +1,149 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Content Developer</title>
     <link href="${codiconCss}" rel="stylesheet" />
     <link href="${webviewCss}" rel="stylesheet" />
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>
-                    <span class="icon codicon codicon-file-text"></span>
-                    AI Content Developer
-                </h1>
+      <header>
+        <div class="header-content">
+          <div class="logo-container">
+            <div class="logo-icon">
+              <span class="codicon codicon-file-text"></span>
             </div>
-            <p class="subtitle">Create professional technical documentation with AI</p>
-        </header>
+            <h1>AI Content Developer</h1>
+          </div>
+          <p class="subtitle">Create professional technical documentation with AI assistance</p>
+          <div class="header-decoration"></div>
+        </div>
+      </header>
 
-        <main>
-            <div class="form-container">
-                <div class="form-section">
-                    <label for="contentGoal" class="form-label">
-                        <span class="codicon codicon-edit"></span>
-                        What content would you like to create?
-                    </label>
-                    <textarea 
-                        id="contentGoal" 
-                        class="form-textarea" 
-                        placeholder="Describe the documentation you want to generate (e.g., 'Create a quickstart guide for setting up authentication')"
-                        rows="4"
-                    ></textarea>
+      <main>
+        <div class="form-container">
+          <div class="form-section main-input">
+            <div class="section-header">
+              <label for="contentGoal" class="form-label">
+                <span class="codicon codicon-sparkle"></span>
+                What documentation would you like to create?
+              </label>
+              <div class="label-decoration"></div>
+            </div>
+            <div class="input-container">
+              <textarea
+                id="contentGoal"
+                class="form-textarea"
+                placeholder="Describe the documentation you want to generate (e.g., 'Create a quickstart guide for setting up OAuth authentication')"
+                rows="5"
+              ></textarea>
+              <div class="input-suggestions">
+                <div class="suggestions-label">Quick examples:</div>
+                <div class="suggestions-row">
+                  <span
+                    class="suggestion-chip"
+                    data-suggestion="Create a quickstart guide for OAuth authentication setup"
+                    >🚀 OAuth Quickstart</span
+                  >
+                  <span
+                    class="suggestion-chip"
+                    data-suggestion="Write a comprehensive tutorial for REST API integration"
+                    >📚 API Tutorial</span
+                  >
+                  <span
+                    class="suggestion-chip"
+                    data-suggestion="Generate troubleshooting guide for common deployment issues"
+                    >🔧 Troubleshooting</span
+                  >
+                  <span
+                    class="suggestion-chip"
+                    data-suggestion="Create overview documentation for microservices architecture"
+                    >🏗️ Architecture Overview</span
+                  >
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="form-section">
-                    <label class="form-label">
-                        <span class="codicon codicon-folder"></span>
-                        Input Files (optional)
-                    </label>
-                    <div class="input-files-section">
-                        <button id="selectFiles" class="secondary-btn">
-                            <span class="codicon codicon-file-add"></span>
-                            Select Files
-                        </button>
-                        <div id="selectedFiles" class="selected-files-container">
-                            <p class="placeholder-text">No files selected</p>
-                        </div>
-                    </div>
+          <div class="form-section files-section">
+            <div class="section-header">
+              <label class="form-label">
+                <span class="codicon codicon-folder"></span>
+                Source Materials
+              </label>
+              <span class="optional-badge">Optional</span>
+            </div>
+            <div class="input-files-section">
+              <button id="selectFiles" class="secondary-btn">
+                <span class="codicon codicon-file-add"></span>
+                Add Files
+              </button>
+              <div id="selectedFiles" class="selected-files-container">
+                <div class="placeholder-content">
+                  <span class="codicon codicon-cloud-upload"></span>
+                  <p class="placeholder-text">Drop files here or click "Add Files"</p>
+                  <p class="placeholder-subtext">Supports: MD, PDF, Word, PowerPoint, Text files</p>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="form-section">
-                    <button id="generateBtn" class="primary-btn">
-                        <span class="codicon codicon-play"></span>
-                        Generate Content
-                    </button>
+          <div class="form-section action-section">
+            <div class="workflow-preview">
+              <div class="workflow-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                  <span class="step-title">Pattern Selection</span>
+                  <span class="step-description"
+                    >AI analyzes your request to select the optimal Microsoft documentation
+                    pattern</span
+                  >
                 </div>
+              </div>
+              <div class="workflow-arrow">→</div>
+              <div class="workflow-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                  <span class="step-title">Content Generation</span>
+                  <span class="step-description"
+                    >AI creates professional documentation using your materials and Microsoft
+                    standards</span
+                  >
+                </div>
+              </div>
             </div>
 
-            <div id="status" class="status-display"></div>
-        </main>
+            <div class="action-container">
+              <button id="generateBtn" class="primary-btn">
+                <span class="codicon codicon-sparkle"></span>
+                Generate Documentation
+                <div class="btn-shine"></div>
+              </button>
+              <p class="action-description">
+                Creates professional, Microsoft-standard documentation in seconds
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div id="status" class="status-display">
+          <div class="status-content">
+            <span class="status-icon"></span>
+            <span class="status-text"></span>
+          </div>
+          <div class="status-progress">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <p>Powered by GitHub Copilot • Microsoft Documentation Standards</p>
+      </footer>
     </div>
 
     <script src="${webviewJs}"></script>
-</body>
+  </body>
 </html>
