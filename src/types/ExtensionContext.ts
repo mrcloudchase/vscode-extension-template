@@ -16,19 +16,17 @@ export interface ExtensionContext {
  */
 export enum MessageType {
   // From extension to webview
-  UPDATE_CONTENT = 'updateContent',
   UPDATE_THEME = 'updateTheme',
   UPDATE_CONFIG = 'updateConfig',
   SHOW_MESSAGE = 'showMessage',
-  WORKFLOW_STATUS = 'workflowStatus',
-  WORKFLOW_COMPLETE = 'workflowComplete',
-  COPILOT_INPUT = 'copilotInput',
-  COPILOT_OUTPUT = 'copilotOutput',
+  GENERATION_STATUS = 'generationStatus',
+  GENERATION_COMPLETE = 'generationComplete',
+  UPDATE_CONTENT = 'updateContent',
 
   // From webview to extension
   LOG_MESSAGE = 'logMessage',
   READY = 'ready',
-  EXECUTE_WORKFLOW = 'executeWorkflow',
+  GENERATE_CONTENT = 'generateContent',
   SELECT_FILES = 'selectFiles',
 }
 
@@ -73,9 +71,9 @@ export interface WebviewState {
 }
 
 /**
- * Workflow execution options
+ * Content generation request
  */
-export interface WorkflowOptions {
+export interface ContentRequest {
   contentGoal: string;
   inputs: Array<{
     id: string;
@@ -83,5 +81,40 @@ export interface WorkflowOptions {
     type: string;
     uri: string;
   }>;
-  interactiveMode: boolean;
+}
+
+/**
+ * Pattern selection result
+ */
+export interface PatternSelection {
+  patternId: string;
+  patternName: string;
+  reasoning: string;
+  requiredSections: string[];
+  audienceAlignment: string;
+  alternativePatterns: Array<{
+    patternId: string;
+    reason: string;
+  }>;
+}
+
+/**
+ * Generated content result
+ */
+export interface GeneratedContent {
+  content: string;
+  title: string;
+  filename: string;
+  frontMatter: {
+    title: string;
+    description: string;
+    author: string;
+    'ms.topic': string;
+    'ms.date': string;
+  };
+  metadata: {
+    wordCount: number;
+    readingTime: number;
+    technicalLevel: string;
+  };
 }

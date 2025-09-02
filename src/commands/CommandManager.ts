@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ExtensionContext } from '../types/ExtensionContext';
-import { WebviewProvider } from '../providers/webview/WebviewProvider';
+import { WebviewProvider } from '../providers/WebviewProvider';
 import { COMMAND_IDS } from '../constants';
 
 export class CommandManager implements vscode.Disposable {
@@ -58,7 +58,8 @@ export class CommandManager implements vscode.Disposable {
   private refreshWebview(): void {
     try {
       this.context.logger.info('Refreshing webview...');
-      this.webviewProvider.refresh();
+      // For simplified version, just show/create the webview again
+      this.webviewProvider.createOrShow();
       void vscode.window.showInformationMessage('Webview refreshed successfully');
     } catch (error) {
       this.context.logger.error('Failed to refresh webview', error);

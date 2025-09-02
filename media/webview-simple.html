@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Content Developer</title>
+    <link href="${codiconCss}" rel="stylesheet" />
+    <link href="${webviewCss}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-content">
+          <h1>
+            <span class="icon codicon codicon-file-text"></span>
+            AI Content Developer
+          </h1>
+        </div>
+        <p class="subtitle">Create professional technical documentation with AI</p>
+      </header>
+
+      <main>
+        <div class="form-container">
+          <div class="form-section">
+            <label for="contentGoal" class="form-label">
+              <span class="codicon codicon-edit"></span>
+              What content would you like to create?
+            </label>
+            <textarea
+              id="contentGoal"
+              class="form-textarea"
+              placeholder="Describe the documentation you want to generate (e.g., 'Create a quickstart guide for setting up authentication')"
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="form-section">
+            <label class="form-label">
+              <span class="codicon codicon-folder"></span>
+              Input Files (optional)
+            </label>
+            <div class="input-files-section">
+              <button id="selectFiles" class="secondary-btn">
+                <span class="codicon codicon-file-add"></span>
+                Select Files
+              </button>
+              <div id="selectedFiles" class="selected-files-container">
+                <p class="placeholder-text">No files selected</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <button id="generateBtn" class="primary-btn">
+              <span class="codicon codicon-play"></span>
+              Generate Content
+            </button>
+          </div>
+        </div>
+
+        <div id="status" class="status-display"></div>
+      </main>
+    </div>
+
+    <script src="${webviewJs}"></script>
+  </body>
+</html>

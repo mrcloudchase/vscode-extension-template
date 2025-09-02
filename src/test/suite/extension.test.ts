@@ -42,13 +42,6 @@ suite('AI Content Developer Test Suite', () => {
     // Check if webview command executed without error
     assert.ok(true, 'AI Content Developer webview command executed without error');
   });
-
-  test('Should register chat participant', async () => {
-    // Check if chat participant is available
-    // Note: This test may need to be updated based on VS Code Chat API testing capabilities
-    const commands = await vscode.commands.getCommands();
-    assert.ok(true, 'Chat participant registration test placeholder');
-  });
 });
 
 suite('Configuration Manager Test Suite', () => {
@@ -72,12 +65,5 @@ suite('Configuration Manager Test Suite', () => {
 
     // Restore original value
     await config.update('enableDebugMode', originalValue, vscode.ConfigurationTarget.Workspace);
-  });
-
-  test('Should have GitHub token configuration', () => {
-    const config = vscode.workspace.getConfiguration('ai-content-developer');
-
-    // Should have githubToken setting (even if empty)
-    assert.ok(config.inspect('githubToken'));
   });
 });

@@ -4,188 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Content Developer</title>
-    <link rel="stylesheet" href="${webviewCss}">
-    <link rel="stylesheet" href="${codiconCss}">
+    <link href="${codiconCss}" rel="stylesheet" />
+    <link href="${webviewCss}" rel="stylesheet" />
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header>
             <div class="header-content">
                 <h1>
-                    <span class="codicon codicon-file-text"></span>
+                    <span class="icon codicon codicon-file-text"></span>
                     AI Content Developer
                 </h1>
-                <button id="refresh-btn" class="icon-button" title="Refresh">
-                    <span class="codicon codicon-refresh"></span>
-                </button>
             </div>
-            <p class="subtitle">Create professional technical documentation using Copilot</p>
+            <p class="subtitle">Create professional technical documentation with AI</p>
         </header>
 
-        <!-- Main Content -->
         <main>
-            <!-- Input Sources Section -->
-            <section class="input-section">
-                <h2>Input Sources</h2>
-                
-                <!-- Input Buttons -->
-                <div class="input-buttons">
-                    <button id="select-files-btn" class="input-button">
-                        <span class="codicon codicon-file"></span>
-                        Select Files
-                    </button>
-                    <button id="add-url-btn" class="input-button">
-                        <span class="codicon codicon-globe"></span>
-                        Add URL
-                    </button>
-                    <button id="add-github-btn" class="input-button">
-                        <span class="codicon codicon-github"></span>
-                        Add GitHub PR
-                    </button>
-                </div>
-
-                <!-- URL Input (hidden by default) -->
-                <div id="url-input-container" class="input-container hidden">
-                    <div class="input-row">
-                        <input 
-                            type="url" 
-                            id="url-input" 
-                            placeholder="https://example.com/documentation"
-                            class="text-input"
-                        />
-                        <button id="add-url-confirm" class="confirm-button">
-                            <span class="codicon codicon-check"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- GitHub Input (hidden by default) -->
-                <div id="github-input-container" class="input-container hidden">
-                    <div class="input-row">
-                        <input 
-                            type="text" 
-                            id="github-input" 
-                            placeholder="owner/repo/pull/123 or full GitHub URL"
-                            class="text-input"
-                        />
-                        <button id="add-github-confirm" class="confirm-button">
-                            <span class="codicon codicon-check"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Input List -->
-                <div class="input-list-container">
-                    <h3>Selected Inputs</h3>
-                    <div id="input-list" class="input-list">
-                        <div class="empty-state">No inputs added yet</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Content Request Section -->
-            <section class="content-section">
-                <h2>Content Goal</h2>
-                <div class="input-group">
-                    <label for="content-goal">What documentation do you want to create?</label>
+            <div class="form-container">
+                <div class="form-section">
+                    <label for="contentGoal" class="form-label">
+                        <span class="codicon codicon-edit"></span>
+                        What content would you like to create?
+                    </label>
                     <textarea 
-                        id="content-goal" 
-                        class="content-goal-input" 
-                        placeholder="e.g., Create comprehensive API documentation for the authentication module including examples and error handling..."
+                        id="contentGoal" 
+                        class="form-textarea" 
+                        placeholder="Describe the documentation you want to generate (e.g., 'Create a quickstart guide for setting up authentication')"
                         rows="4"
                     ></textarea>
                 </div>
 
-                <!-- Execution Mode -->
-                <div class="execution-mode">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="interactive-mode" />
-                        <span>Interactive Mode</span>
+                <div class="form-section">
+                    <label class="form-label">
+                        <span class="codicon codicon-folder"></span>
+                        Input Files (optional)
                     </label>
-                    <p class="mode-description">
-                        Pause between each prompt step for review and modification
-                    </p>
+                    <div class="input-files-section">
+                        <button id="selectFiles" class="secondary-btn">
+                            <span class="codicon codicon-file-add"></span>
+                            Select Files
+                        </button>
+                        <div id="selectedFiles" class="selected-files-container">
+                            <p class="placeholder-text">No files selected</p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="button-group">
-                    <button id="execute-btn" class="primary-button" disabled>
+                <div class="form-section">
+                    <button id="generateBtn" class="primary-btn">
                         <span class="codicon codicon-play"></span>
-                        Execute Workflow
-                    </button>
-                    <button id="clear-btn" class="secondary-button">
-                        <span class="codicon codicon-clear-all"></span>
-                        Clear All
+                        Generate Content
                     </button>
                 </div>
-            </section>
+            </div>
 
-            <!-- Workflow Status Section -->
-            <section id="workflow-status" class="status-section hidden">
-                <h3>Workflow Progress</h3>
-                <div class="status-container">
-                    <div id="current-step" class="current-step hidden"></div>
-                    <div id="status-text" class="status-text"></div>
-                    <div class="progress-indicator">
-                        <span class="codicon codicon-loading codicon-modifier-spin"></span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Copilot I/O Monitor Section -->
-            <section id="copilot-monitor" class="monitor-section hidden">
-                <div class="monitor-header">
-                    <h3>
-                        <span class="codicon codicon-terminal"></span>
-                        Copilot Communication Monitor
-                    </h3>
-                    <div class="monitor-controls">
-                        <button id="toggle-monitor" class="monitor-control-btn" title="Minimize/Maximize">
-                            <span class="codicon codicon-chevron-down"></span>
-                        </button>
-                        <button id="clear-monitor" class="monitor-control-btn" title="Clear">
-                            <span class="codicon codicon-clear-all"></span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="monitor-content" class="monitor-content">
-                    <!-- Input Window -->
-                    <div class="io-window">
-                        <div class="io-header">
-                            <span class="codicon codicon-arrow-right"></span>
-                            <span>Input to Copilot</span>
-                            <button class="copy-btn" data-target="copilot-input" title="Copy">
-                                <span class="codicon codicon-copy"></span>
-                            </button>
-                        </div>
-                        <div id="copilot-input" class="io-content">
-                            <div class="io-placeholder">Waiting for input...</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Output Window -->
-                    <div class="io-window">
-                        <div class="io-header">
-                            <span class="codicon codicon-arrow-left"></span>
-                            <span>Output from Copilot</span>
-                            <button class="copy-btn" data-target="copilot-output" title="Copy">
-                                <span class="codicon codicon-copy"></span>
-                            </button>
-                        </div>
-                        <div id="copilot-output" class="io-content">
-                            <div class="io-placeholder">Waiting for response...</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Response Section -->
-            <section id="response-section" class="response-section hidden">
-                <h3>Result</h3>
-                <div id="response-content" class="response-content"></div>
-            </section>
+            <div id="status" class="status-display"></div>
         </main>
     </div>
 

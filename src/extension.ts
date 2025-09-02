@@ -1,14 +1,16 @@
 import * as vscode from 'vscode';
-import { WebviewProvider } from './providers/webview/WebviewProvider';
+import { WebviewProvider } from './providers/WebviewProvider';
 import { CommandManager } from './commands/CommandManager';
 import { ConfigurationManager } from './config/ConfigurationManager';
 import { Logger } from './utils/Logger';
 import { ExtensionContext } from './types/ExtensionContext';
+import { ContentGenerator } from './services/ContentGenerator';
 
 let webviewProvider: WebviewProvider | undefined;
 let commandManager: CommandManager | undefined;
 let configManager: ConfigurationManager | undefined;
 let logger: Logger | undefined;
+let contentGenerator: ContentGenerator | undefined;
 
 /**
  * This method is called when your extension is activated
@@ -33,8 +35,12 @@ export function activate(context: vscode.ExtensionContext): void {
       configManager,
     };
 
+    // Initialize content generator
+    contentGenerator = new ContentGenerator(extensionContext);
+    logger.info('Content generator initialized');
+
     // Initialize webview provider
-    webviewProvider = new WebviewProvider(extensionContext);
+    webviewProvider = new WebviewProvider(extensionContext, contentGenerator);
     logger.info('WebView provider initialized');
 
     // Initialize command manager
@@ -81,6 +87,7 @@ export function deactivate(): void {
   // Clean up resources
   webviewProvider?.dispose();
   commandManager?.dispose();
+  contentGenerator?.dispose();
 
   logger?.info('Extension has been deactivated');
 }
