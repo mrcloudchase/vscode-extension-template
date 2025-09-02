@@ -76,15 +76,35 @@
               <span class="optional-badge">Optional</span>
             </div>
             <div class="input-files-section">
-              <button id="selectFiles" class="secondary-btn">
-                <span class="codicon codicon-file-add"></span>
-                Add Files
-              </button>
+              <div class="input-buttons">
+                <button id="selectFiles" class="secondary-btn">
+                  <span class="codicon codicon-file-add"></span>
+                  Add Files
+                </button>
+                <button id="addUrl" class="secondary-btn">
+                  <span class="codicon codicon-globe"></span>
+                  Add URL
+                </button>
+              </div>
+              <div id="urlInput" class="url-input-section hidden">
+                <input
+                  type="url"
+                  id="urlField"
+                  placeholder="Enter URL (e.g., https://docs.example.com/api)"
+                  class="url-field"
+                />
+                <div class="url-actions">
+                  <button id="confirmUrl" class="confirm-btn">Add</button>
+                  <button id="cancelUrl" class="cancel-btn">Cancel</button>
+                </div>
+              </div>
               <div id="selectedFiles" class="selected-files-container">
                 <div class="placeholder-content">
                   <span class="codicon codicon-cloud-upload"></span>
-                  <p class="placeholder-text">Drop files here or click "Add Files"</p>
-                  <p class="placeholder-subtext">Supports: MD, PDF, Word, PowerPoint, Text files</p>
+                  <p class="placeholder-text">Add files or URLs to provide context</p>
+                  <p class="placeholder-subtext">
+                    Supports: Markdown, Word, PDF, PowerPoint, Images, Text files, and URLs
+                  </p>
                 </div>
               </div>
             </div>

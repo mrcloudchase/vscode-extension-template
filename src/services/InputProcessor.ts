@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ExtensionContext } from '../types/ExtensionContext';
+import {
+  MarkdownHandler,
+  WordHandler,
+  PDFHandler,
+  PowerPointHandler,
+  ImageHandler,
+  URLHandler,
+  TextHandler,
+} from './handlers';
 
 export interface InputFile {
   id: string;
@@ -9,11 +18,34 @@ export interface InputFile {
   uri: string;
 }
 
+export interface ProcessedInput {
+  source: InputFile;
+  content: string;
+  metadata: any;
+}
+
 /**
- * Simplified input processor for content generation
+ * Input processor with type-specific handlers
  */
 export class InputProcessor {
-  constructor(private context: ExtensionContext) {}
+  private markdownHandler: MarkdownHandler;
+  private wordHandler: WordHandler;
+  private pdfHandler: PDFHandler;
+  private powerPointHandler: PowerPointHandler;
+  private imageHandler: ImageHandler;
+  private urlHandler: URLHandler;
+  private textHandler: TextHandler;
+
+  constructor(private context: ExtensionContext) {
+    // Initialize all handlers
+    this.markdownHandler = new MarkdownHandler(context);
+    this.wordHandler = new WordHandler(context);
+    this.pdfHandler = new PDFHandler(context);
+    this.powerPointHandler = new PowerPointHandler(context);
+    this.imageHandler = new ImageHandler(context);
+    this.urlHandler = new URLHandler(context);
+    this.textHandler = new TextHandler(context);
+  }
 
   /**
    * Process input files and return combined context
@@ -23,45 +55,144 @@ export class InputProcessor {
       return 'No input files provided.';
     }
 
-    const processedContent: string[] = [];
+    const processedInputs: ProcessedInput[] = [];
 
     for (const input of inputs) {
       try {
-        const content = await this.processSingleInput(input);
-        processedContent.push(`### ${input.name}\n\n${content}\n`);
+        const processed = await this.processSingleInput(input);
+        processedInputs.push(processed);
       } catch (error) {
         this.context.logger.error(`Failed to process input ${input.name}:`, error);
-        processedContent.push(`### ${input.name}\n\nError processing file: ${error}\n`);
+        processedInputs.push({
+          source: input,
+          content: `Error processing ${input.name}: ${error}`,
+          metadata: { error: true },
+        });
       }
     }
 
-    return processedContent.join('\n---\n\n');
+    // Format processed inputs for the prompt
+    return this.formatProcessedInputs(processedInputs);
   }
 
   /**
-   * Process a single input file
+   * Process a single input using appropriate handler
    */
-  private async processSingleInput(input: InputFile): Promise<string> {
+  private async processSingleInput(input: InputFile): Promise<ProcessedInput> {
+    this.context.logger.info(`Processing ${input.type} input: ${input.name}`);
+
+    let processedContent;
+
     try {
-      const uri = vscode.Uri.parse(input.uri);
-
-      // For text-based files, read the content
-      if (this.isTextFile(input.type)) {
-        const content = await vscode.workspace.fs.readFile(uri);
-        return Buffer.from(content).toString('utf8');
+      switch (input.type.toLowerCase()) {
+        case 'markdown':
+          processedContent = await this.markdownHandler.process(input.uri);
+          break;
+        case 'word':
+          processedContent = await this.wordHandler.process(input.uri);
+          break;
+        case 'pdf':
+          processedContent = await this.pdfHandler.process(input.uri);
+          break;
+        case 'powerpoint':
+          processedContent = await this.powerPointHandler.process(input.uri);
+          break;
+        case 'image':
+          processedContent = await this.imageHandler.process(input.uri);
+          break;
+        case 'url':
+          processedContent = await this.urlHandler.process(input.uri);
+          break;
+        case 'text':
+        case 'file':
+        default:
+          processedContent = await this.textHandler.process(input.uri);
+          break;
       }
 
-      // For other file types, provide file information
-      return `File: ${input.name} (${input.type})\nPath: ${uri.fsPath}\n\nNote: Please analyze this ${input.type} file for relevant content.`;
+      return {
+        source: input,
+        content: processedContent.content,
+        metadata: processedContent.metadata,
+      };
     } catch (error) {
-      throw new Error(`Failed to read file: ${error}`);
+      throw new Error(`Handler failed for ${input.type}: ${error}`);
     }
   }
 
   /**
-   * Check if file type is text-based
+   * Format processed inputs for prompt context
    */
-  private isTextFile(type: string): boolean {
-    return ['markdown', 'text', 'file'].includes(type.toLowerCase());
+  private formatProcessedInputs(inputs: ProcessedInput[]): string {
+    if (inputs.length === 0) {
+      return 'No input materials provided.';
+    }
+
+    const sections = inputs.map((input) => {
+      const { source, content, metadata } = input;
+
+      let section = `### ${source.name} (${source.type.toUpperCase()})\n\n`;
+
+      // Add metadata if available
+      if (metadata && !metadata.error) {
+        const metaInfo = [];
+        if (metadata.wordCount) {
+          metaInfo.push(`Words: ${metadata.wordCount}`);
+        }
+        if (metadata.pageCount) {
+          metaInfo.push(`Pages: ${metadata.pageCount}`);
+        }
+        if (metadata.slideCount) {
+          metaInfo.push(`Slides: ${metadata.slideCount}`);
+        }
+        if (metadata.lineCount) {
+          metaInfo.push(`Lines: ${metadata.lineCount}`);
+        }
+
+        if (metaInfo.length > 0) {
+          section += `*Metadata: ${metaInfo.join(', ')}*\n\n`;
+        }
+      }
+
+      section += content;
+
+      return section;
+    });
+
+    return sections.join('\n\n---\n\n');
+  }
+
+  /**
+   * Detect input type from file extension or URI
+   */
+  public static detectInputType(name: string, uri: string): string {
+    // Check if it's a URL
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      return 'url';
+    }
+
+    // Detect by file extension
+    const ext = name.split('.').pop()?.toLowerCase();
+
+    const typeMap: { [key: string]: string } = {
+      md: 'markdown',
+      markdown: 'markdown',
+      txt: 'text',
+      log: 'text',
+      config: 'text',
+      doc: 'word',
+      docx: 'word',
+      pdf: 'pdf',
+      ppt: 'powerpoint',
+      pptx: 'powerpoint',
+      png: 'image',
+      jpg: 'image',
+      jpeg: 'image',
+      gif: 'image',
+      svg: 'image',
+      webp: 'image',
+    };
+
+    return typeMap[ext || ''] || 'file';
   }
 }

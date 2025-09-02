@@ -9,6 +9,7 @@ import {
   ContentRequest,
 } from '../types/ExtensionContext';
 import { ContentGenerator } from '../services/ContentGenerator';
+import { InputProcessor } from '../services/InputProcessor';
 
 /**
  * Simplified webview provider for content generation
@@ -210,8 +211,25 @@ export class WebviewProvider implements vscode.Disposable {
       const options: vscode.OpenDialogOptions = {
         canSelectMany: true,
         filters: {
-          Documents: ['md', 'markdown', 'txt', 'doc', 'docx', 'pdf', 'ppt', 'pptx'],
-          Images: ['png', 'jpg', 'jpeg', 'gif', 'svg'],
+          'Text Documents': ['md', 'markdown', 'txt', 'log', 'config'],
+          'Office Documents': ['doc', 'docx', 'pdf', 'ppt', 'pptx'],
+          Images: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'],
+          'All Supported': [
+            'md',
+            'markdown',
+            'txt',
+            'doc',
+            'docx',
+            'pdf',
+            'ppt',
+            'pptx',
+            'png',
+            'jpg',
+            'jpeg',
+            'gif',
+            'svg',
+            'webp',
+          ],
           'All Files': ['*'],
         },
       };
@@ -221,15 +239,7 @@ export class WebviewProvider implements vscode.Disposable {
       if (fileUris && fileUris.length > 0) {
         const files = fileUris.map((uri) => {
           const name = uri.path.split('/').pop() || 'Unknown';
-          const ext = name.split('.').pop()?.toLowerCase() || '';
-
-          let type = 'file';
-          if (['md', 'markdown'].includes(ext)) type = 'markdown';
-          else if (['doc', 'docx'].includes(ext)) type = 'word';
-          else if (ext === 'pdf') type = 'pdf';
-          else if (['ppt', 'pptx'].includes(ext)) type = 'powerpoint';
-          else if (ext === 'txt') type = 'text';
-          else if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) type = 'image';
+          const type = InputProcessor.detectInputType(name, uri.toString());
 
           return {
             id: uri.toString(),

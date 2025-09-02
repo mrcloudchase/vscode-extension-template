@@ -1,6 +1,7 @@
 /* Modern AI Content Developer UI */
 :root {
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -47,9 +48,11 @@ body {
   font-family: var(--font-family);
   font-size: var(--vscode-font-size, 13px);
   color: var(--text-primary);
-  background: linear-gradient(135deg, 
-    var(--bg-primary) 0%, 
-    color-mix(in srgb, var(--bg-primary) 95%, var(--vscode-button-background) 5%) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    color-mix(in srgb, var(--bg-primary) 95%, var(--vscode-button-background) 5%) 100%
+  );
   line-height: 1.6;
   overflow-x: hidden;
   min-height: 100vh;
@@ -220,8 +223,9 @@ header {
   padding: var(--spacing-md);
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
-  background: linear-gradient(var(--vscode-input-background), var(--vscode-input-background)) padding-box,
-              var(--gradient-primary) border-box;
+  background:
+    linear-gradient(var(--vscode-input-background), var(--vscode-input-background)) padding-box,
+    var(--gradient-primary) border-box;
   color: var(--vscode-input-foreground);
   font-family: var(--font-family);
   font-size: 14px;
@@ -232,8 +236,9 @@ header {
 
 .form-textarea:focus {
   border-color: transparent;
-  background: linear-gradient(var(--vscode-input-background), var(--vscode-input-background)) padding-box,
-              var(--gradient-accent) border-box;
+  background:
+    linear-gradient(var(--vscode-input-background), var(--vscode-input-background)) padding-box,
+    var(--gradient-accent) border-box;
   box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
 }
 
@@ -289,6 +294,81 @@ header {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
+.input-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.url-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+}
+
+.url-input-section.hidden {
+  display: none;
+}
+
+.url-field {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: var(--font-family);
+  font-size: 13px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.url-field:focus {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.1);
+}
+
+.url-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.confirm-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.confirm-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.cancel-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.cancel-btn:hover {
+  background: var(--glass-bg);
 }
 
 .selected-files-container {
@@ -712,10 +792,12 @@ header {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.8) 0%, 
-    rgba(255, 255, 255, 0.4) 50%, 
-    rgba(255, 255, 255, 0.8) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
   width: 0%;
   transition: width 0.3s ease;
 }
@@ -752,13 +834,23 @@ header {
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes shimmer {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInUp {
@@ -784,24 +876,43 @@ header {
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes progress {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
 }
 
 /* Form section animations */
-.form-section:nth-child(1) { animation: slideInUp 0.6s ease-out 0.1s both; }
-.form-section:nth-child(2) { animation: slideInUp 0.6s ease-out 0.2s both; }
-.form-section:nth-child(3) { animation: slideInUp 0.6s ease-out 0.3s both; }
+.form-section:nth-child(1) {
+  animation: slideInUp 0.6s ease-out 0.1s both;
+}
+.form-section:nth-child(2) {
+  animation: slideInUp 0.6s ease-out 0.2s both;
+}
+.form-section:nth-child(3) {
+  animation: slideInUp 0.6s ease-out 0.3s both;
+}
 
 /* Dark theme adjustments */
 .theme-dark {
@@ -815,28 +926,28 @@ header {
   .container {
     padding: var(--spacing-md);
   }
-  
+
   header {
     padding: var(--spacing-md);
   }
-  
+
   .header-content h1 {
     font-size: 24px;
   }
-  
+
   .form-section {
     padding: var(--spacing-md);
   }
-  
+
   .workflow-preview {
     flex-direction: column;
     gap: var(--spacing-md);
   }
-  
+
   .workflow-arrow {
     transform: rotate(90deg);
   }
-  
+
   .workflow-step {
     min-width: auto;
     width: 100%;

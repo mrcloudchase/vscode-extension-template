@@ -252,7 +252,7 @@ export class ContentGenerator {
     try {
       const models = await vscode.lm.selectChatModels({
         vendor: 'copilot',
-        family: 'gpt-4',
+        family: 'gpt-4o',
       });
 
       if (models.length === 0) {

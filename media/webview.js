@@ -94,6 +94,41 @@
       });
     }
 
+    // Add URL button
+    const addUrlBtn = document.getElementById('addUrl');
+    if (addUrlBtn) {
+      addUrlBtn.addEventListener('click', () => {
+        showUrlInput();
+      });
+    }
+
+    // URL input handlers
+    const confirmUrlBtn = document.getElementById('confirmUrl');
+    const cancelUrlBtn = document.getElementById('cancelUrl');
+    const urlField = document.getElementById('urlField');
+
+    if (confirmUrlBtn) {
+      confirmUrlBtn.addEventListener('click', () => {
+        addUrlToInputs();
+      });
+    }
+
+    if (cancelUrlBtn) {
+      cancelUrlBtn.addEventListener('click', () => {
+        hideUrlInput();
+      });
+    }
+
+    if (urlField) {
+      urlField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addUrlToInputs();
+        } else if (e.key === 'Escape') {
+          hideUrlInput();
+        }
+      });
+    }
+
     // Generate content button
     const generateBtn = document.getElementById('generateBtn');
     if (generateBtn) {
@@ -326,6 +361,7 @@
       powerpoint: 'file-media',
       text: 'file-code',
       image: 'file-media',
+      url: 'globe',
       file: 'file',
     };
     return iconMap[type] || 'file';
@@ -345,6 +381,72 @@
       fileItem.style.animation = 'slideOutRight 0.3s ease-out';
     }
   };
+
+  /**
+   * Show URL input section
+   */
+  function showUrlInput() {
+    const urlSection = document.getElementById('urlInput');
+    const urlField = document.getElementById('urlField');
+
+    if (urlSection) {
+      urlSection.classList.remove('hidden');
+      if (urlField) {
+        urlField.focus();
+      }
+    }
+  }
+
+  /**
+   * Hide URL input section
+   */
+  function hideUrlInput() {
+    const urlSection = document.getElementById('urlInput');
+    const urlField = document.getElementById('urlField');
+
+    if (urlSection) {
+      urlSection.classList.add('hidden');
+      if (urlField) {
+        urlField.value = '';
+      }
+    }
+  }
+
+  /**
+   * Add URL to inputs list
+   */
+  function addUrlToInputs() {
+    const urlField = document.getElementById('urlField');
+
+    if (urlField && urlField.value.trim()) {
+      const url = urlField.value.trim();
+
+      // Basic URL validation
+      try {
+        new URL(url);
+      } catch (error) {
+        showMessage('Please enter a valid URL', 'warning');
+        return;
+      }
+
+      // Add to inputs
+      const urlInput = {
+        id: Date.now().toString(),
+        name: url,
+        type: 'url',
+        uri: url,
+      };
+
+      state.inputs.push(urlInput);
+      vscode.setState(state);
+      updateFilesList();
+      hideUrlInput();
+
+      showMessage(`URL added: ${url}`, 'success');
+    } else {
+      showMessage('Please enter a URL', 'warning');
+    }
+  }
 
   /**
    * Update UI with current state
