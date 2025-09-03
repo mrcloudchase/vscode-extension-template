@@ -15,10 +15,18 @@ import { InputProcessor } from './InputProcessor';
 export class ContentGenerator {
   private inputProcessor: InputProcessor;
   private contentStandards: any;
+  private monitorCallback?: (type: string, data: any) => void;
 
   constructor(private context: ExtensionContext) {
     this.inputProcessor = new InputProcessor(context);
     this.loadContentStandards();
+  }
+
+  /**
+   * Set callback for model communication monitoring
+   */
+  public setMonitorCallback(callback: (type: string, data: any) => void): void {
+    this.monitorCallback = callback;
   }
 
   /**
@@ -91,7 +99,7 @@ export class ContentGenerator {
     processedInputs: string
   ): Promise<PatternSelection> {
     const prompt = this.buildPatternSelectionPrompt(request, processedInputs);
-    const result = await this.callLanguageModel(prompt);
+    const result = await this.callLanguageModel(prompt, 'pattern-selection');
 
     try {
       const jsonContent = this.extractJsonFromResponse(result);
@@ -111,7 +119,7 @@ export class ContentGenerator {
     patternSelection: PatternSelection
   ): Promise<GeneratedContent> {
     const prompt = this.buildContentGenerationPrompt(request, processedInputs, patternSelection);
-    const result = await this.callLanguageModel(prompt);
+    const result = await this.callLanguageModel(prompt, 'content-generation');
 
     try {
       const jsonContent = this.extractJsonFromResponse(result);
@@ -248,8 +256,17 @@ export class ContentGenerator {
   /**
    * Call Copilot language model
    */
-  private async callLanguageModel(prompt: string): Promise<string> {
+  private async callLanguageModel(prompt: string, step?: string): Promise<string> {
     try {
+      // Send prompt to monitor
+      if (this.monitorCallback) {
+        this.monitorCallback('modelInput', {
+          step: step || 'unknown',
+          content: prompt,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const models = await vscode.lm.selectChatModels({
         vendor: 'copilot',
         family: 'gpt-4o',
@@ -267,7 +284,18 @@ export class ContentGenerator {
         result += fragment;
       }
 
-      return result.trim();
+      const finalResult = result.trim();
+
+      // Send response to monitor
+      if (this.monitorCallback) {
+        this.monitorCallback('modelOutput', {
+          step: step || 'unknown',
+          content: finalResult,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      return finalResult;
     } catch (error) {
       throw new Error(`Language model call failed: ${error}`);
     }

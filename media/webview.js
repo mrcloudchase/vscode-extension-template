@@ -8,6 +8,9 @@
     theme: 'light',
     contentGoal: '',
     inputs: [],
+    monitorExpanded: false,
+    promptCount: 0,
+    responseCount: 0,
   };
 
   // Message types enum (matching the extension)
@@ -19,6 +22,8 @@
     SHOW_MESSAGE: 'showMessage',
     GENERATION_STATUS: 'generationStatus',
     GENERATION_COMPLETE: 'generationComplete',
+    MODEL_INPUT: 'modelInput',
+    MODEL_OUTPUT: 'modelOutput',
 
     // From webview to extension
     LOG_MESSAGE: 'logMessage',
@@ -151,6 +156,30 @@
       });
     }
 
+    // Monitor toggle button
+    const toggleMonitorBtn = document.getElementById('toggleMonitor');
+    if (toggleMonitorBtn) {
+      toggleMonitorBtn.addEventListener('click', () => {
+        toggleMonitor();
+      });
+    }
+
+    // Monitor control buttons
+    const clearMonitorBtn = document.getElementById('clearMonitor');
+    const exportMonitorBtn = document.getElementById('exportMonitor');
+
+    if (clearMonitorBtn) {
+      clearMonitorBtn.addEventListener('click', () => {
+        clearMonitor();
+      });
+    }
+
+    if (exportMonitorBtn) {
+      exportMonitorBtn.addEventListener('click', () => {
+        exportMonitorData();
+      });
+    }
+
     // Listen for messages from the extension
     window.addEventListener('message', handleMessage);
   }
@@ -186,6 +215,14 @@
 
       case MessageType.UPDATE_CONTENT:
         handleUpdateContent(message.payload);
+        break;
+
+      case MessageType.MODEL_INPUT:
+        handleModelInput(message.payload);
+        break;
+
+      case MessageType.MODEL_OUTPUT:
+        handleModelOutput(message.payload);
         break;
 
       default:
@@ -288,31 +325,34 @@
     }
   }
 
-     /**
-    * Handle content updates (file selection)
-    */
-   function handleUpdateContent(payload) {
-     if (payload.files) {
-       if (payload.append) {
-         // Append new files to existing inputs
-         const existingUris = new Set(state.inputs.map(input => input.uri));
-         const newFiles = payload.files.filter(file => !existingUris.has(file.uri));
-         
-         if (newFiles.length > 0) {
-           state.inputs.push(...newFiles);
-           showMessage(`Added ${newFiles.length} file${newFiles.length !== 1 ? 's' : ''}`, 'success');
-         } else {
-           showMessage('Files already selected', 'warning');
-         }
-       } else {
-         // Replace all inputs (fallback)
-         state.inputs = payload.files;
-       }
-       
-       vscode.setState(state);
-       updateFilesList();
-     }
-   }
+  /**
+   * Handle content updates (file selection)
+   */
+  function handleUpdateContent(payload) {
+    if (payload.files) {
+      if (payload.append) {
+        // Append new files to existing inputs
+        const existingUris = new Set(state.inputs.map((input) => input.uri));
+        const newFiles = payload.files.filter((file) => !existingUris.has(file.uri));
+
+        if (newFiles.length > 0) {
+          state.inputs.push(...newFiles);
+          showMessage(
+            `Added ${newFiles.length} file${newFiles.length !== 1 ? 's' : ''}`,
+            'success'
+          );
+        } else {
+          showMessage('Files already selected', 'warning');
+        }
+      } else {
+        // Replace all inputs (fallback)
+        state.inputs = payload.files;
+      }
+
+      vscode.setState(state);
+      updateFilesList();
+    }
+  }
 
   /**
    * Update the files list display
@@ -444,25 +484,25 @@
         return;
       }
 
-             // Create friendly display name for URL
-       let displayName = url;
-       try {
-         const urlObj = new URL(url);
-         displayName = urlObj.hostname + urlObj.pathname;
-         if (displayName.length > 50) {
-           displayName = displayName.substring(0, 47) + '...';
-         }
-       } catch (e) {
-         // Use full URL if parsing fails
-       }
+      // Create friendly display name for URL
+      let displayName = url;
+      try {
+        const urlObj = new URL(url);
+        displayName = urlObj.hostname + urlObj.pathname;
+        if (displayName.length > 50) {
+          displayName = displayName.substring(0, 47) + '...';
+        }
+      } catch (e) {
+        // Use full URL if parsing fails
+      }
 
-       // Add to inputs
-       const urlInput = {
-         id: Date.now().toString(),
-         name: displayName,
-         type: 'url',
-         uri: url,
-       };
+      // Add to inputs
+      const urlInput = {
+        id: Date.now().toString(),
+        name: displayName,
+        type: 'url',
+        uri: url,
+      };
 
       state.inputs.push(urlInput);
       vscode.setState(state);
@@ -561,5 +601,223 @@
       payload: { level, text: message, data },
     };
     vscode.postMessage(logMessage);
+  }
+
+  // Monitor Functions
+
+  /**
+   * Handle model input (prompt) messages
+   */
+  function handleModelInput(payload) {
+    state.promptCount++;
+    updateMessageCount('inputCount', state.promptCount);
+
+    const promptsContainer = document.getElementById('promptsContainer');
+    if (promptsContainer) {
+      // Remove empty state if present
+      const emptyState = promptsContainer.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const messageItem = createMessageItem({
+        type: 'input',
+        step: payload.step || 'Unknown',
+        content: payload.content || payload.prompt,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+
+      promptsContainer.appendChild(messageItem);
+      promptsContainer.scrollTop = promptsContainer.scrollHeight;
+    }
+  }
+
+  /**
+   * Handle model output (response) messages
+   */
+  function handleModelOutput(payload) {
+    state.responseCount++;
+    updateMessageCount('outputCount', state.responseCount);
+
+    const responsesContainer = document.getElementById('responsesContainer');
+    if (responsesContainer) {
+      // Remove empty state if present
+      const emptyState = responsesContainer.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const messageItem = createMessageItem({
+        type: 'output',
+        step: payload.step || 'Unknown',
+        content: payload.content || payload.response,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+
+      responsesContainer.appendChild(messageItem);
+      responsesContainer.scrollTop = responsesContainer.scrollHeight;
+    }
+  }
+
+  /**
+   * Create a message item element
+   */
+  function createMessageItem({ type, step, content, timestamp }) {
+    const messageItem = document.createElement('div');
+    messageItem.className = 'message-item';
+
+    messageItem.innerHTML = `
+       <div class="message-header">
+         <span class="message-timestamp">${timestamp}</span>
+         <span class="message-step">Step: ${step}</span>
+       </div>
+       <div class="message-content ${type === 'output' ? 'response' : ''}">${escapeHtml(content)}</div>
+       <div class="message-actions">
+         <button class="copy-btn" onclick="copyToClipboard(this)" title="Copy content">
+           <span class="codicon codicon-copy"></span>
+         </button>
+       </div>
+     `;
+
+    return messageItem;
+  }
+
+  /**
+   * Toggle monitor visibility
+   */
+  function toggleMonitor() {
+    const monitorContent = document.getElementById('monitorContent');
+    const toggleBtn = document.getElementById('toggleMonitor');
+    const controls = document.querySelector('.monitor-controls');
+
+    if (monitorContent && toggleBtn) {
+      const isHidden = monitorContent.classList.contains('hidden');
+
+      if (isHidden) {
+        monitorContent.classList.remove('hidden');
+        toggleBtn.classList.add('expanded');
+        if (controls) controls.classList.remove('hidden');
+        state.monitorExpanded = true;
+      } else {
+        monitorContent.classList.add('hidden');
+        toggleBtn.classList.remove('expanded');
+        if (controls) controls.classList.add('hidden');
+        state.monitorExpanded = false;
+      }
+
+      vscode.setState(state);
+    }
+  }
+
+  /**
+   * Clear monitor content
+   */
+  function clearMonitor() {
+    const promptsContainer = document.getElementById('promptsContainer');
+    const responsesContainer = document.getElementById('responsesContainer');
+
+    if (promptsContainer) {
+      promptsContainer.innerHTML = `
+         <div class="empty-state">
+           <span class="codicon codicon-comment-discussion"></span>
+           <p>No prompts sent yet</p>
+         </div>
+       `;
+    }
+
+    if (responsesContainer) {
+      responsesContainer.innerHTML = `
+         <div class="empty-state">
+           <span class="codicon codicon-robot"></span>
+           <p>No responses received yet</p>
+         </div>
+       `;
+    }
+
+    state.promptCount = 0;
+    state.responseCount = 0;
+    updateMessageCount('inputCount', 0);
+    updateMessageCount('outputCount', 0);
+    vscode.setState(state);
+
+    showMessage('Monitor cleared', 'success');
+  }
+
+  /**
+   * Export monitor data
+   */
+  function exportMonitorData() {
+    const promptsContainer = document.getElementById('promptsContainer');
+    const responsesContainer = document.getElementById('responsesContainer');
+
+    const prompts = Array.from(promptsContainer?.querySelectorAll('.message-item') || []).map(
+      (item) => ({
+        timestamp: item.querySelector('.message-timestamp')?.textContent,
+        step: item.querySelector('.message-step')?.textContent,
+        content: item.querySelector('.message-content')?.textContent,
+      })
+    );
+
+    const responses = Array.from(responsesContainer?.querySelectorAll('.message-item') || []).map(
+      (item) => ({
+        timestamp: item.querySelector('.message-timestamp')?.textContent,
+        step: item.querySelector('.message-step')?.textContent,
+        content: item.querySelector('.message-content')?.textContent,
+      })
+    );
+
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      prompts,
+      responses,
+    };
+
+    // Create download
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `llm-monitor-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showMessage('Monitor data exported', 'success');
+  }
+
+  /**
+   * Update message count display
+   */
+  function updateMessageCount(elementId, count) {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = count;
+    }
+  }
+
+  /**
+   * Copy content to clipboard
+   */
+  window.copyToClipboard = function (button) {
+    const messageContent = button.closest('.message-item')?.querySelector('.message-content');
+    if (messageContent) {
+      const text = messageContent.textContent;
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          showMessage('Copied to clipboard', 'success');
+        })
+        .catch(() => {
+          showMessage('Failed to copy', 'error');
+        });
+    }
+  };
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 })();

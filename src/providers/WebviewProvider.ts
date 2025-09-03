@@ -22,7 +22,12 @@ export class WebviewProvider implements vscode.Disposable {
   constructor(
     private context: ExtensionContext,
     private contentGenerator: ContentGenerator
-  ) {}
+  ) {
+    // Set up monitor callback to forward to webview
+    this.contentGenerator.setMonitorCallback((type: string, data: any) => {
+      this.forwardMonitorMessage(type, data);
+    });
+  }
 
   /**
    * Create or show the webview panel
@@ -268,6 +273,18 @@ export class WebviewProvider implements vscode.Disposable {
       message.timestamp = Date.now();
       await this.panel.webview.postMessage(message);
     }
+  }
+
+  /**
+   * Forward monitor messages to webview
+   */
+  private async forwardMonitorMessage(type: string, data: any): Promise<void> {
+    const messageType = type === 'modelInput' ? MessageType.MODEL_INPUT : MessageType.MODEL_OUTPUT;
+
+    await this.sendMessage({
+      type: messageType,
+      payload: data,
+    });
   }
 
   /**

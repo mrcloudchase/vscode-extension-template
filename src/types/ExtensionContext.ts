@@ -22,6 +22,8 @@ export enum MessageType {
   GENERATION_STATUS = 'generationStatus',
   GENERATION_COMPLETE = 'generationComplete',
   UPDATE_CONTENT = 'updateContent',
+  MODEL_INPUT = 'modelInput',
+  MODEL_OUTPUT = 'modelOutput',
 
   // From webview to extension
   LOG_MESSAGE = 'logMessage',

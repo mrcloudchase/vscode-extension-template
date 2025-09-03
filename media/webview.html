@@ -99,16 +99,16 @@
                 </div>
               </div>
               <div id="selectedFiles" class="selected-files-container">
-                                 <div class="placeholder-content">
-                   <span class="codicon codicon-cloud-upload"></span>
-                   <p class="placeholder-text">Add multiple files and URLs for richer context</p>
-                   <p class="placeholder-subtext">
-                     Select multiple files at once • Add URLs individually • Mix different types
-                   </p>
-                   <p class="placeholder-subtext">
-                     Supports: Markdown, Word, PDF, PowerPoint, Images, Text files, and URLs
-                   </p>
-                 </div>
+                <div class="placeholder-content">
+                  <span class="codicon codicon-cloud-upload"></span>
+                  <p class="placeholder-text">Add multiple files and URLs for richer context</p>
+                  <p class="placeholder-subtext">
+                    Select multiple files at once • Add URLs individually • Mix different types
+                  </p>
+                  <p class="placeholder-subtext">
+                    Supports: Markdown, Word, PDF, PowerPoint, Images, Text files, and URLs
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -158,6 +158,59 @@
           </div>
           <div class="status-progress">
             <div class="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Model Communication Monitor -->
+        <div class="monitor-section">
+          <div class="monitor-header">
+            <button id="toggleMonitor" class="monitor-toggle">
+              <span class="codicon codicon-eye"></span>
+              <span class="monitor-title">Model Communication Monitor</span>
+              <span class="codicon codicon-chevron-down"></span>
+            </button>
+            <div class="monitor-controls hidden">
+              <button id="clearMonitor" class="monitor-btn">
+                <span class="codicon codicon-clear-all"></span>
+                Clear
+              </button>
+              <button id="exportMonitor" class="monitor-btn">
+                <span class="codicon codicon-export"></span>
+                Export
+              </button>
+            </div>
+          </div>
+
+          <div id="monitorContent" class="monitor-content hidden">
+            <div class="monitor-windows">
+              <div class="monitor-window input-window">
+                <div class="window-header">
+                  <span class="codicon codicon-arrow-right"></span>
+                  <span class="window-title">Prompts to LLM</span>
+                  <span class="message-count" id="inputCount">0</span>
+                </div>
+                <div id="promptsContainer" class="window-content">
+                  <div class="empty-state">
+                    <span class="codicon codicon-comment-discussion"></span>
+                    <p>No prompts sent yet</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="monitor-window output-window">
+                <div class="window-header">
+                  <span class="codicon codicon-arrow-left"></span>
+                  <span class="window-title">Responses from LLM</span>
+                  <span class="message-count" id="outputCount">0</span>
+                </div>
+                <div id="responsesContainer" class="window-content">
+                  <div class="empty-state">
+                    <span class="codicon codicon-robot"></span>
+                    <p>No responses received yet</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
