@@ -1,348 +1,298 @@
 # AI Content Developer - Data Flow Documentation
 
-## Complete AI Workflow Data Flow
+## Modern AI Workflow Data Flow
 
-This document illustrates how data flows through the AI Content Developer extension from user input via webview to AI-generated documentation, showing the journey through sequential orchestration and Chat Participant API integration.
+This document illustrates how data flows through the AI Content Developer extension from user input via modern webview to AI-generated documentation, showing the streamlined 2-step workflow with Language Model API integration.
 
 ```mermaid
 graph TD
-    subgraph "User Interface Layer"
-        UI[User Interface<br/>webview.html]
-        UserFiles[File Selection<br/>Word, PDF, PPT, etc.]
-        UserURL[URL Input<br/>https://example.com/doc.pdf]
-        UserGitHub[GitHub PR<br/>github.com/org/repo/pull/123]
-        UserGoal[User Goal<br/>"Create API documentation"]
+    subgraph "Modern User Interface"
+        UI[Glass-morphism Webview<br/>webview.html]
+        UserGoal[Content Goal<br/>"Create OAuth quickstart guide"]
+        UserFiles[Multi-File Selection<br/>MD, Word, PDF, PPT, Images]
+        UserURLs[URL Input<br/>https://docs.oauth.com/guide]
         
-        UserFiles --> UI
-        UserURL --> UI
-        UserGitHub --> UI
         UserGoal --> UI
+        UserFiles --> UI
+        UserURLs --> UI
     end
 
     subgraph "WebView Communication"
-        UIEvents[UI Events<br/>Button Clicks, Form Submission]
-        MsgSend[Message Sending<br/>postMessage()]
-        MsgReceive[Message Receiving<br/>onDidReceiveMessage()]
+        UIEvents[UI Events<br/>Generate Button Click]
+        MsgSend[Message Sending<br/>GENERATE_CONTENT]
+        MsgReceive[Message Handling<br/>WebviewProvider]
         
         UI --> UIEvents
         UIEvents --> MsgSend
         MsgSend --> MsgReceive
     end
 
-    subgraph "Extension Backend"
-        WebViewProvider[WebviewProvider<br/>Message Handler]
-        ProcessInputsMsg[PROCESS_INPUTS<br/>Message Type]
-        ExecuteWorkflowMsg[EXECUTE_WORKFLOW<br/>Message Type]
-        
-        MsgReceive --> WebViewProvider
-        WebViewProvider --> ProcessInputsMsg
-        WebViewProvider --> ExecuteWorkflowMsg
-    end
-
     subgraph "Input Processing Pipeline"
-        CopilotSvc[CopilotIntegrationService<br/>Main Orchestrator]
-        InputHandler[InputHandlerService<br/>Input Router]
-        TypeDetection{Input Type<br/>Detection}
+        ContentGen[ContentGenerator<br/>Main Orchestrator]
+        InputProc[InputProcessor<br/>Type Router]
+        TypeDetect[Type Detection<br/>Extension/URL Analysis]
         
-        ProcessInputsMsg --> CopilotSvc
-        ExecuteWorkflowMsg --> CopilotSvc
-        CopilotSvc --> InputHandler
-        InputHandler --> TypeDetection
+        MsgReceive --> ContentGen
+        ContentGen --> InputProc
+        InputProc --> TypeDetect
     end
 
-    subgraph "File Type Routing"
-        TypeDetection --> WordService[WordDocumentService<br/>.docx, .doc]
-        TypeDetection --> PDFService[PDFService<br/>.pdf]
-        TypeDetection --> PPTService[PowerPointService<br/>.pptx, .ppt]
-        TypeDetection --> TextService[TextService<br/>.txt, .md]
-        TypeDetection --> URLService[URLService<br/>HTTP/HTTPS]
-        TypeDetection --> GitHubService[GitHubService<br/>GitHub PRs]
-    end
-
-    subgraph "Content Extraction"
-        WordService --> WordContent[Word Content<br/>Text Extraction]
-        PDFService --> PDFContent[PDF Content<br/>Text Parsing]
-        PPTService --> PPTContent[PowerPoint Content<br/>Slide Text]
-        TextService --> TextContent[Text Content<br/>File Reading]
-        URLService --> URLContent[Web Content<br/>HTML Scraping]
-        GitHubService --> GitHubContent[GitHub Content<br/>PR Details]
-    end
-
-    subgraph "Content Aggregation"
-        ProcessedContent[ProcessedContent[]<br/>Standardized Format]
-        ContentCombination[Content Combination<br/>Merge All Sources]
+    subgraph "Type-Specific Handlers"
+        MarkdownH[MarkdownHandler<br/>Full Content + Metadata]
+        WordH[WordHandler<br/>File Info + AI Instruction]
+        PDFH[PDFHandler<br/>File Info + AI Instruction]
+        PowerPointH[PowerPointHandler<br/>File Info + AI Instruction]
+        ImageH[ImageHandler<br/>File Info + AI Analysis]
+        URLH[URLHandler<br/>URL Info + AI Fetch]
+        TextH[TextHandler<br/>Full Content + Metadata]
         
-        WordContent --> ProcessedContent
-        PDFContent --> ProcessedContent
-        PPTContent --> ProcessedContent
-        TextContent --> ProcessedContent
-        URLContent --> ProcessedContent
-        GitHubContent --> ProcessedContent
-        
-        ProcessedContent --> ContentCombination
+        TypeDetect --> MarkdownH
+        TypeDetect --> WordH
+        TypeDetect --> PDFH
+        TypeDetect --> PowerPointH
+        TypeDetect --> ImageH
+        TypeDetect --> URLH
+        TypeDetect --> TextH
     end
 
-    subgraph "Workflow Orchestration"
-        WorkflowOrch[WorkflowOrchestratorService<br/>Step Management]
-        WorkflowDef[Workflow Definition<br/>technical-documentation]
-        StepExecution[Step-by-Step Execution<br/>Analyze → Outline → Write → Review → Finalize]
+    subgraph "AI Workflow Orchestration"
+        Step1[Step 1: Pattern Selection<br/>AI Chooses Microsoft Pattern]
+        Step2[Step 2: Content Generation<br/>AI Creates Documentation]
+        JSONExtract[JSON Extraction<br/>Parse AI Responses]
         
-        ContentCombination --> WorkflowOrch
-        WorkflowOrch --> WorkflowDef
-        WorkflowDef --> StepExecution
+        ContentGen --> Step1
+        Step1 --> JSONExtract
+        JSONExtract --> Step2
+        Step2 --> JSONExtract
     end
 
-    subgraph "Prompt System"
-        PromptSvc[PromptService<br/>Template Manager]
-        PromptTemplates[Prompt Templates<br/>Markdown Files]
-        VariableSubstitution[Variable Substitution<br/>{{goal}}, {{content}}]
-        RenderedPrompt[Rendered Prompt<br/>Complete Instructions]
+    subgraph "Language Model Integration"
+        LangModelAPI[VS Code Language Model<br/>Direct Copilot Access]
+        PromptSend[Prompt Transmission<br/>Template-based Prompts]
+        ResponseStream[Response Streaming<br/>Real-time Processing]
         
-        StepExecution --> PromptSvc
-        PromptSvc --> PromptTemplates
-        PromptTemplates --> VariableSubstitution
-        VariableSubstitution --> RenderedPrompt
+        Step1 --> PromptSend
+        Step2 --> PromptSend
+        PromptSend --> LangModelAPI
+        LangModelAPI --> ResponseStream
+        ResponseStream --> JSONExtract
     end
 
-    subgraph "AI Processing"
-        CopilotAPI[Copilot Chat API<br/>OpenAI Integration]
-        AIResponse[AI Response<br/>Generated Content]
-        StepResult[Step Result<br/>Processed Output]
+    subgraph "Microsoft Standards Engine"
+        ContentStandards[content-standards.json<br/>Microsoft Documentation Standards]
+        PatternTemplates[Pattern Templates<br/>5 Microsoft Patterns]
+        FormattingRules[Formatting Rules<br/>Notes, Warnings, Code Blocks]
         
-        RenderedPrompt --> CopilotAPI
-        CopilotAPI --> AIResponse
-        AIResponse --> StepResult
+        ContentStandards --> PatternTemplates
+        ContentStandards --> FormattingRules
+        Step1 --> ContentStandards
+        Step2 --> PatternTemplates
+        Step2 --> FormattingRules
     end
 
-    subgraph "Workflow Progress"
-        StepComplete[Step Complete<br/>Store Result]
-        NextStep{More Steps?}
-        FinalResult[Final Document<br/>Complete Output]
+    subgraph "Model Communication Monitor"
+        PromptCapture[Prompt Capture<br/>Real-time Logging]
+        ResponseCapture[Response Capture<br/>Complete Responses]
+        MonitorCallback[Monitor Callback<br/>WebView Updates]
         
-        StepResult --> StepComplete
-        StepComplete --> NextStep
-        NextStep -->|Yes| StepExecution
-        NextStep -->|No| FinalResult
+        PromptSend --> PromptCapture
+        ResponseStream --> ResponseCapture
+        PromptCapture --> MonitorCallback
+        ResponseCapture --> MonitorCallback
+        MonitorCallback --> UI
     end
 
-    subgraph "Response Communication"
-        ProgressMsg[WORKFLOW_STEP_COMPLETE<br/>Progress Updates]
-        FinalMsg[WORKFLOW_RESULT<br/>Final Output]
-        UIUpdate[UI Update<br/>Display Results]
+    subgraph "Output Generation"
+        FileGeneration[File Generation<br/>Microsoft-Standard Markdown]
+        FileSave[Save to docs/<br/>Automatic File Placement]
+        AutoOpen[Auto Open<br/>Display Generated Content]
         
-        StepComplete --> ProgressMsg
-        FinalResult --> FinalMsg
-        ProgressMsg --> UIUpdate
-        FinalMsg --> UIUpdate
+        JSONExtract --> FileGeneration
+        FileGeneration --> FileSave
+        FileSave --> AutoOpen
     end
 
-    style CopilotSvc fill:#e1f5fe
-    style WorkflowOrch fill:#f3e5f5
-    style PromptSvc fill:#e8f5e8
-    style InputHandler fill:#fff3e0
-    style ProcessedContent fill:#ffebee
-    style CopilotAPI fill:#f1f8e9
+    style ContentGen fill:#e1f5fe
+    style InputProc fill:#f3e5f5
+    style LangModelAPI fill:#e8f5e8
+    style ContentStandards fill:#fff3e0
+    style JSONExtract fill:#ffebee
 ```
 
-## Detailed AI Workflow Data Flow Steps
+## Detailed Data Flow Steps
 
-### 1. User Input Collection (Webview Interface)
+### 1. User Input Collection (Modern Webview Interface)
 ```
 User Actions → UI State → Message Creation
-├── File Selection (VS Code file dialog) - Word, PDF, PowerPoint, Text, URLs, GitHub PRs
-├── Goal Definition (textarea) - "Create API documentation", "Write getting started guide"
-├── Input Validation (client-side) - Ensure files and goal are provided
-└── PROCESS_INPUTS Message - Triggers backend workflow
+├── File Selection (VS Code file dialog) - Multiple files, various types
+├── URL Addition (Inline input) - Web pages and documentation
+├── Goal Definition (Enhanced textarea) - "Create OAuth quickstart", "Document REST API"
+└── GENERATE_CONTENT Message - Triggers AI workflow
 ```
 
-### 2. File Processing Pipeline
+### 2. Multi-Input Processing Pipeline
 ```
-Raw Inputs → Type Detection → Service Routing → Content Extraction
-├── InputHandlerService.detectInputType() - Analyzes file extensions and URL patterns
-├── Lazy Service Loading - WordDocumentService, PDFService, etc. loaded on demand
-├── Content Extraction - Service-specific processing (mammoth.js, pdf-parse, cheerio, etc.)
-└── ProcessedContent[] - Standardized format with text and metadata
-```
-
-### 3. Context Handoff System
-```
-Processed Content → Context Storage → Chat Participant Launch
-├── WorkflowContextManager.storeContext() - Creates unique context ID with 30-min TTL
-├── Context Data - Goal, processed files, metadata stored temporarily
-├── Chat Query Generation - "@content-creator context:${contextId}"
-└── workbench.action.chat.open - Automatic VS Code Chat launch
+Raw Inputs → Type Detection → Handler Routing → Content Extraction
+├── InputProcessor.detectInputType() - Analyzes file extensions and URL patterns
+├── Handler Routing - Routes to appropriate type-specific handler
+├── Content Extraction - Handler-specific processing with metadata
+└── Formatted Context - Standardized output with rich metadata
 ```
 
-### 4. Sequential AI Workflow Execution (Chat Participant)
+### 3. AI Workflow Execution (2-Step Process)
 ```
-Chat Request → Repository Analysis → 5-Step AI Orchestration
-├── Step 1: Repository Structure Analysis - VS Code APIs scan workspace
-├── Step 2: Directory Selection - AI chooses optimal content placement
-├── Step 3: Content Strategy - AI decides CREATE vs UPDATE approach
-├── Step 4: Pattern Selection - AI selects Microsoft documentation template
-└── Step 5: Content Generation - AI creates professional documentation
-```
-
-### 5. Language Model API Integration
-```
-Prompt Templates → Variable Substitution → AI Processing → JSON Extraction
-├── PromptService.renderPrompt() - Template variable substitution
-├── request.model.sendRequest() - Direct Language Model API calls
-├── Streaming Response Processing - Real-time progress via stream.progress()
-└── JSON Schema Validation - Structured outputs ensure consistency
+Formatted Context → Pattern Selection → Content Generation → File Output
+├── Step 1: Pattern Selection - AI analyzes request and selects Microsoft pattern
+├── Step 2: Content Generation - AI creates documentation using pattern template
+├── JSON Extraction - Robust parsing of AI responses from various formats
+└── File Generation - Microsoft-standard Markdown with proper structure
 ```
 
-### 6. Document Creation & User Feedback
+### 4. Language Model API Integration
 ```
-AI Response → File Writing → User Notification → Interactive Actions
-├── File System Write - Document created in selected directory
-├── Pattern Compliance Validation - Ensures Microsoft standards adherence
-├── Chat Response with Buttons - "Open Created File", "Create More Content"
-└── Context Cleanup - Automatic removal after successful completion
+Template Prompts → Variable Substitution → AI Processing → JSON Responses
+├── Pattern Selection Prompt - Optimized context with pattern options only
+├── Content Generation Prompt - Full template + standards + guidelines
+├── Direct API Calls - vscode.lm.selectChatModels() with Copilot
+└── Response Processing - Streaming with real-time monitor capture
 ```
 
-## Data Structures Flow
+### 5. Microsoft Standards Application
+```
+Selected Pattern → Template Retrieval → Standards Application → Compliant Output
+├── Pattern Template - Exact Microsoft markdown template structure
+├── Core Guidelines - Professional writing and structure requirements
+├── Formatting Elements - Microsoft-specific notes, warnings, code blocks
+└── Customer Intent - Required "As a <role>, I want <what> so that <why>" format
+```
 
-### Input Data Structure
+### 6. Real-Time Monitoring System
+```
+AI Interactions → Monitor Callbacks → WebView Updates → User Visibility
+├── Prompt Capture - Every request sent to Language Model API
+├── Response Capture - Complete AI responses with timestamps
+├── Step Tracking - Pattern-selection vs content-generation identification
+└── Export Capability - JSON download for debugging and optimization
+```
+
+## Detailed Component Data Flow
+
+### ContentGenerator Workflow
 ```typescript
-interface InputFile {
-  uri: string;        // File path or URL
-  name: string;       // Display name
-  type: InputType;    // Detected or specified type
-  content?: string;   // Pre-loaded content (optional)
-}
+generateContent(request: ContentRequest)
+    ↓
+1. processInputs(request.inputs) → InputProcessor
+    ↓
+2. selectPattern(request, processedInputs) → Language Model API
+    ↓ (Returns: PatternSelection JSON)
+3. generateContentWithPattern(request, processedInputs, pattern) → Language Model API  
+    ↓ (Returns: GeneratedContent JSON)
+4. saveContent(generatedContent) → File System
+    ↓
+5. Auto-open generated file
 ```
 
-### Processing Result Structure
+### Input Processing Flow
 ```typescript
-interface ProcessedContent {
-  source: string;     // Original source identifier
-  type: InputType;    // Content type
-  text: string;       // Extracted text content
-  metadata?: any;     // Additional context
-}
+InputProcessor.processInputs(inputs: InputFile[])
+    ↓
+For each input:
+1. detectInputType(name, uri) → string
+2. Route to appropriate handler
+3. handler.process(uri) → ProcessedContent
+4. formatProcessedInputs(results) → string
+    ↓
+Returns: Formatted context string with metadata
 ```
 
-### Workflow Context Structure
+### Handler Processing Examples
+
+#### Markdown Handler
 ```typescript
-interface WorkflowContext {
-  contextId: string;                      // Unique context identifier
-  timestamp: number;                      // Creation timestamp for TTL
-  goal: string;                           // User's content objective
-  processedFiles: ProcessedContent[];     // All processed input files
-  originalInputs: InputFile[];            // Original file references
-  options: { workspaceRoot?: string };    // Additional context options
-  metadata: {                             // Extension metadata
-    userAgent: string;
-    vscodeVersion: string;
-    extensionVersion: string;
-  };
-}
+MarkdownHandler.process(uri)
+    ↓
+1. Read file content via VS Code File System API
+2. Extract metadata (word count, headings, code blocks)
+3. Return: { content: fullText, metadata: analysis }
 ```
 
-### AI Workflow Step Schemas
+#### URL Handler
 ```typescript
-interface DirectorySelectionSchema {
-  selectedDirectory: string;              // Chosen directory path
-  reasoning: string;                      // AI's selection reasoning
-  confidence: number;                     // Confidence score (0.0-1.0)
-  existingFiles: string[];                // Files in selected directory
-  directoryPurpose: string;               // Purpose description
-  alternativeOptions: Array<{             // Alternative directory options
-    directory: string;
-    reason: string;
-  }>;
-}
-
-interface ContentStrategySchema {
-  action: 'CREATE' | 'UPDATE';            // Strategy decision
-  targetFile?: string;                    // File to update (if UPDATE)
-  reasoning: string;                      // Strategy reasoning
-  contentOverlap: number;                 // Overlap percentage (0-100)
-  existingContentSummary?: string;        // Summary of existing content
-  userJourneyContext: string;             // User journey context
-}
+URLHandler.process(uri)
+    ↓
+1. Validate URL format
+2. Extract domain and path information
+3. Return: { content: urlInfo + aiInstruction, metadata: urlData }
 ```
 
-## AI Workflow Error Handling
-
-```mermaid
-graph TD
-    A[AI Processing Error] --> B{Error Type}
-    B -->|File Processing Error| C[Show File Error in Webview]
-    B -->|Network Timeout| D[Show Network Error in Chat]
-    B -->|Language Model API Error| E[Show AI Error in Chat Stream]
-    B -->|JSON Parsing Error| F[Log Error & Use Fallback]
-    B -->|Context Expired| G[Prompt User to Restart from Webview]
-    
-    C --> H[Log Error Details]
-    D --> H
-    E --> H
-    F --> H
-    G --> H
-    
-    H --> I[Update Chat with Error Status]
-    I --> J[Provide Recovery Options]
+#### Word/PDF/PowerPoint Handlers
+```typescript
+DocumentHandler.process(uri)
+    ↓
+1. Get file metadata (size, name)
+2. Create AI processing instruction
+3. Return: { content: fileInfo + aiInstruction, metadata: fileData }
 ```
 
-## Context Management Flow
+## Model Communication Monitoring
 
-### Context Lifecycle
-```
-Context Creation → Storage → Retrieval → Cleanup
-├── nanoid(12) - Generate unique context ID
-├── 30-minute TTL - Automatic expiration
-├── Periodic Cleanup - Every 5 minutes check for expired contexts
-└── Manual Removal - After successful workflow completion
-```
-
-### Context Handoff Protocol
-```
-Webview Request → Context Storage → Chat Launch → Context Retrieval
-├── CopilotIntegrationService.createNewContent() - Initial processing
-├── WorkflowContextManager.storeContext() - Temporary storage
-├── Chat Query Generation - "@content-creator context:${contextId}"
-└── ChatParticipantService.retrieveContext() - Context restoration
+### Monitor Data Capture
+```typescript
+ContentGenerator.callLanguageModel(prompt, step)
+    ↓
+1. monitorCallback('modelInput', { step, content: prompt, timestamp })
+2. Send prompt to Language Model API
+3. Collect streaming response
+4. monitorCallback('modelOutput', { step, content: response, timestamp })
+    ↓
+WebviewProvider.forwardMonitorMessage() → WebView UI
 ```
 
-## AI Integration Performance
+### Monitor UI Updates
+```javascript
+// In webview.js
+handleModelInput(payload) → Add to prompts window with timestamp
+handleModelOutput(payload) → Add to responses window with timestamp
+updateMessageCount() → Update counter badges
+```
 
-### Language Model API Optimization
+## Error Handling & Resilience
+
+### JSON Response Processing
+```typescript
+extractJsonFromResponse(response: string)
+    ↓
+1. Check for markdown code blocks (```json...```)
+2. Extract JSON from mixed text responses
+3. Fallback to direct JSON parsing
+4. Comprehensive error logging for debugging
 ```
-Prompt Preparation → Streaming Request → Progressive Response → JSON Extraction
-├── Template Rendering - Variable substitution in prompts
-├── Streaming API Calls - Real-time progress updates
-├── Fragment Processing - Progressive content delivery
-└── Schema Validation - Structured output parsing
+
+### Input Processing Error Handling
+```typescript
+processInputs(inputs)
+    ↓
+For each input:
+1. Try type-specific handler
+2. On error: Log details + create error placeholder
+3. Continue processing remaining inputs
+4. Return: Partial results with error indicators
 ```
+
+## Performance Characteristics
+
+### Optimization Strategies
+- **Context Reduction**: Pattern selection gets minimal context (60% token reduction)
+- **Template Caching**: Content standards loaded once at startup
+- **Handler Efficiency**: Type-specific processing avoids unnecessary operations
+- **Streaming Responses**: Real-time display without blocking UI
 
 ### Memory Management
-```
-File Processing → Context Storage → AI Processing → Cleanup
-├── ProcessedContent Limit - Reasonable memory usage
-├── Context TTL Management - 30-minute automatic cleanup
-├── Stream Buffer Management - Progressive AI response handling
-└── Service Disposal - Proper resource cleanup on deactivation
-```
+- **Lazy Handler Loading**: Handlers created only when needed
+- **Efficient File Reading**: VS Code File System API with proper disposal
+- **State Management**: Minimal webview state with VS Code persistence
+- **Monitor Cleanup**: Built-in clear functionality to prevent memory buildup
 
-## Security Considerations in AI Workflow
+---
 
-### Input Sanitization
-```
-User Input → File Validation → Content Extraction → AI Processing
-├── File Type Validation - Ensure supported formats
-├── URL Validation - Prevent malicious URLs
-├── Content Size Limits - 10MB max for URLs, reasonable file sizes
-└── GitHub Token Security - Optional token storage in VS Code settings
-```
-
-### AI Response Validation
-```
-AI Response → JSON Extraction → Schema Validation → Content Application
-├── JSON Format Validation - Ensure structured responses
-├── Schema Compliance - Validate against expected data types
-├── Content Sanitization - Remove any potentially harmful content
-└── Pattern Enforcement - Ensure Microsoft documentation standards
-```
-
-This AI-powered data flow ensures robust, secure, and intelligent processing of user inputs while providing real-time feedback and maintaining deterministic, high-quality documentation generation through the Chat Participant API integration.
+This data flow architecture enables efficient, transparent, and robust AI-powered documentation generation while maintaining professional Microsoft standards and providing complete observability into the AI workflow.

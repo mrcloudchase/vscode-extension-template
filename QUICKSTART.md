@@ -5,187 +5,195 @@ Get up and running with AI-powered technical documentation creation in minutes!
 ## 📋 Prerequisites Check
 
 Before starting, ensure you have:
-- ✅ Node.js v16+ installed (`node --version`)
-- ✅ Visual Studio Code v1.90.0+ installed
-- ✅ GitHub Copilot subscription active
-- ✅ Git installed (`git --version`)
+- ✅ Visual Studio Code v1.102.0+ installed
+- ✅ GitHub Copilot subscription active  
+- ✅ Node.js v16+ installed (for development)
+- ✅ Git installed (for development)
 
-## 🎯 5-Minute Setup
+## 🎯 2-Minute User Setup
 
-### Step 1: Install Dependencies
+### Option A: Install Pre-built Extension (Easiest)
+
+1. **Download**: Get `ai-content-developer-0.0.1.vsix` from releases
+2. **Install**: 
+   - Open VS Code
+   - Press `Ctrl+Shift+P` (Cmd+Shift+P on Mac)
+   - Type "Extensions: Install from VSIX"
+   - Select the downloaded .vsix file
+3. **Restart**: Restart VS Code
+4. **Use**: Press `Ctrl+Shift+P` → "AI Content Developer: Open AI Content Developer"
+
+### Option B: Development Setup
+
+1. **Clone Repository**
+```bash
+git clone https://github.com/mrcloudchase/vscode-extension-template.git
+cd vscode-extension-template
+```
+
+2. **Install Dependencies**
 ```bash
 npm install
 ```
 
-### Step 2: Open in VS Code
+3. **Launch Extension**
 ```bash
-code .
+# Press F5 in VS Code to open extension development host
 ```
 
-### Step 3: Launch Extension
-Press `F5` to open a new VS Code window with the extension loaded.
+## 🚀 First Use - Create Documentation
 
-### Step 4: Test the AI Content Developer
-In the new VS Code window:
-1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-2. Type: `AI Content Developer: Open AI Content Developer`
-3. Press Enter
+### Step 1: Open the Extension
+- Press `Ctrl+Shift+P` (Cmd+Shift+P on Mac)
+- Type "AI Content Developer: Open AI Content Developer"
+- Click the command to open the modern interface
 
-🎉 **Congratulations!** You should now see the AI Content Developer interface!
+### Step 2: Describe Your Goal
+In the beautiful glass-morphism interface:
+- **Enter your content goal**: "Create a quickstart guide for OAuth authentication"
+- **Try suggestion chips**: Click any quick example to populate the field
 
-## 🤖 First Documentation Creation
+### Step 3: Add Source Materials (Optional)
+- **Add Files**: Click "Add Files" to select multiple documents
+  - Supports: Markdown, Word, PDF, PowerPoint, Images, Text files
+- **Add URLs**: Click "Add URL" to include web documentation
+  - Example: https://docs.oauth.com/guide
 
-### Quick Test Workflow
+### Step 4: Generate Documentation
+- **Click "Generate Documentation"**
+- **Watch the workflow**: See the 2-step process in action
+  1. 🎯 Pattern Selection - AI chooses optimal Microsoft pattern
+  2. ✨ Content Generation - AI creates professional documentation
 
-1. **In the webview interface:**
-   - Click "Select Files" and choose a text file or document
-   - In the "Content Goal" field, type: `Create a getting started guide`
-   - Click "Create Documentation"
+### Step 5: Review Results
+- **Auto-opens**: Generated documentation opens automatically
+- **Location**: Saved to `docs/` folder in your workspace
+- **Format**: Professional Microsoft-standard Markdown
 
-2. **In the chat interface:**
-   - Watch as the `@content-creator` participant analyzes your repository
-   - See real-time progress through the 5-step workflow
-   - Click "Open Created File" when complete
+## 🔍 Monitor AI Workflow (Advanced)
 
-3. **Verify the result:**
-   - Check that a new markdown file was created in an appropriate directory
-   - Review the generated content for structure and quality
+### View Model Communications
+1. **Expand Monitor**: Click "👁️ Model Communication Monitor" 
+2. **See Prompts**: Left window shows exact prompts sent to Copilot
+3. **See Responses**: Right window shows complete AI responses
+4. **Copy/Export**: Use buttons to copy content or export data
 
-## 🛠️ Development Workflow
+### Understanding the Workflow
+- **Pattern Selection**: AI analyzes your request and selects from 5 Microsoft patterns:
+  - Overview, Concept, Quickstart, How-to Guide, Tutorial
+- **Content Generation**: AI uses the selected pattern template with your materials
 
-### Watch Mode (Recommended)
-```bash
-npm run watch
+## 📊 Example Workflows
+
+### Quickstart Guide Creation
 ```
-Keep this running in a terminal while developing. It will automatically recompile your code on changes.
+Input: "Create OAuth setup guide"
+Files: oauth-config.md, api-spec.pdf
+    ↓
+AI selects: "Quickstart" pattern (< 10 minutes goal)
+    ↓
+Output: Complete quickstart with prerequisites, steps, validation
+```
 
-### Manual Compilation
+### API Documentation
+```
+Input: "Document REST API endpoints"  
+Files: swagger.json, examples.md
+URL: https://api.example.com/docs
+    ↓
+AI selects: "How-to Guide" pattern (procedural tasks)
+    ↓
+Output: Structured API guide with examples and usage
+```
+
+### Concept Documentation
+```
+Input: "Explain microservices architecture"
+Files: architecture-diagram.png, design-doc.docx
+    ↓
+AI selects: "Concept" pattern (deep understanding)
+    ↓
+Output: Comprehensive conceptual documentation
+```
+
+## 🎨 UI Features
+
+### Modern Interface
+- **Glass-morphism design** with smooth animations
+- **Interactive suggestion chips** for quick content ideas
+- **Visual workflow preview** showing the 2-step process
+- **Real-time status updates** with progress indicators
+
+### Multi-Input Support
+- **Drag-and-drop styling** for file selection
+- **URL validation** with friendly display names
+- **Type-specific icons** and metadata display
+- **Remove functionality** for managing inputs
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+**Extension won't activate:**
+- Ensure VS Code version 1.102.0+
+- Check that Copilot extension is installed and active
+
+**No Copilot model available:**
+- Verify GitHub Copilot subscription is active
+- Try restarting VS Code
+- Check VS Code Language Model API availability
+
+**JSON parsing errors:**
+- Check the Model Communication Monitor for raw responses
+- Verify prompts are being sent correctly
+- Look for truncated or malformed JSON in responses
+
+### Debug Mode
+1. **Enable debug logging**: Check extension settings
+2. **View logs**: Check VS Code Output panel → "AI Content Developer"
+3. **Monitor communications**: Use the built-in model monitor
+
+## 🔧 Development
+
+### Building from Source
 ```bash
+# Install dependencies
+npm install
+
+# Compile TypeScript
 npm run compile
+
+# Package for distribution
+npm install -g @vscode/vsce
+vsce package
 ```
 
-### Debugging Tips
-1. **Extension Code**: Set breakpoints in `.ts` files and debug with F5
-2. **Chat Participant**: Monitor responses in VS Code Chat interface
-3. **WebView Code**: Use Developer Tools (`Help > Toggle Developer Tools`)
-4. **View Logs**: Check Output panel (`View > Output > AI Content Developer`)
-
-## 🎯 Understanding the AI Workflow
-
-### Sequential Steps Explained
-
-1. **📁 Directory Selection**:
-   - AI explores your workspace using built-in tools
-   - Finds optimal location for new content
-   - Considers existing documentation organization
-   - Provides reasoning for placement decision
-
-2. **🎯 Content Strategy**:
-   - AI decides: CREATE new content vs UPDATE existing
-   - Analyzes content overlap and user journey
-   - Ensures coherent documentation experience
-
-3. **🎨 Pattern Selection**:
-   - AI chooses appropriate Microsoft documentation pattern
-   - Matches user intent with optimal structure
-   - Considers audience and technical complexity
-
-4. **✍️ Content Generation**:
-   - AI creates professional, structured content
-   - Follows Microsoft documentation standards
-   - Includes proper front matter and formatting
-
-### Chat Participant Commands
-
-You can also interact directly with the chat participant:
-
+### Testing
 ```bash
-# Create new documentation
-@content-creator Create a deployment guide for containerized applications
-
-# Update existing content  
-@content-creator Update the API authentication guide with PKCE flow
-
-# Analyze and document
-@content-creator Review this GitHub PR and create release notes
-```
-
-## 🧪 Testing Your Changes
-
-### Quick Test
-1. Make your changes
-2. Press `Ctrl+R` / `Cmd+R` in the Extension Development Host window
-3. Test your changes
-
-### Run Tests
-```bash
+# Run tests
 npm test
+
+# Launch development instance
+# Press F5 in VS Code
 ```
 
-## 📚 Common Tasks
+## 📚 Documentation Standards
 
-### Add npm Package
-```bash
-npm install package-name
-```
+The extension follows **Microsoft documentation standards** with:
+- **5 content patterns**: Overview, Concept, Quickstart, How-to, Tutorial
+- **Proper front matter**: Title, description, author, ms.topic, date
+- **Customer intent statements**: "As a <role>, I want <what> so that <why>"
+- **Microsoft formatting**: Notes, warnings, code blocks, next step buttons
+- **Professional structure**: Consistent section ordering and naming
 
-### Format Code
-```bash
-npm run format
-```
+## 🎯 Next Steps
 
-### Lint Code
-```bash
-npm run lint
-```
-
-### Build for Production
-```bash
-npm run package
-```
-
-## 🆘 Troubleshooting
-
-### Extension Not Loading?
-1. Check for errors in Debug Console
-2. Ensure `npm install` completed successfully
-3. Verify VS Code version is 1.90.0 or higher
-4. Try `npm run compile` manually
-
-### Chat Participant Not Available?
-1. Ensure GitHub Copilot extension is installed and active
-2. Check that you have a valid Copilot subscription
-3. Verify VS Code Chat is available (`Ctrl+Shift+I`)
-4. Check extension logs for registration errors
-
-### File Processing Errors?
-1. Verify file permissions and formats
-2. Check internet connectivity for URLs
-3. Configure GitHub token for PR access in settings
-4. Review file size limits (10MB max for URLs)
-
-### Workflow Interruptions?
-1. Check VS Code Chat for error messages
-2. Review extension logs in Output panel
-3. Verify context hasn't expired (30-minute limit)
-4. Restart workflow from webview if needed
-
-## 📖 Next Steps
-
-1. **Read the Main README**: Complete feature overview and technical details
-2. **Explore the Architecture**: Check `docs/architecture.md` for system design
-3. **Review Data Flow**: See `docs/dataflow.md` for processing pipeline
-4. **Try Advanced Features**: Test GitHub PR analysis and multi-file workflows
-
-## 💬 Need Help?
-
-- 📋 Check the [troubleshooting section](README.md#troubleshooting) in main README
-- 🤖 Review chat participant logs for workflow issues
-- 📚 Consult [VS Code Chat Participant API docs](https://code.visualstudio.com/api/extension-guides/chat)
-- 🐛 Report issues with detailed logs and reproduction steps
+- **Create your first document** using the workflow above
+- **Explore different patterns** by varying your content goals
+- **Use multiple inputs** to provide rich context for AI generation
+- **Monitor AI interactions** to understand and optimize the process
+- **Share feedback** to help improve the extension
 
 ---
 
-**Start creating professional documentation with AI!** 🚀
-
-The extension is designed to be intuitive - upload your materials, describe your goal, and let AI handle the rest!
+**Ready to create professional documentation with AI? Open the extension and start generating!** 🎉
