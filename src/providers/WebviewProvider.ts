@@ -251,7 +251,7 @@ export class WebviewProvider implements vscode.Disposable {
 
         await this.sendMessage({
           type: MessageType.UPDATE_CONTENT,
-          payload: { files },
+          payload: { files, append: true },
           id: message.id,
         });
       }

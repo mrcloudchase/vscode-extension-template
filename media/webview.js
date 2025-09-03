@@ -288,16 +288,31 @@
     }
   }
 
-  /**
-   * Handle content updates (file selection)
-   */
-  function handleUpdateContent(payload) {
-    if (payload.files) {
-      state.inputs = payload.files;
-      vscode.setState(state);
-      updateFilesList();
-    }
-  }
+     /**
+    * Handle content updates (file selection)
+    */
+   function handleUpdateContent(payload) {
+     if (payload.files) {
+       if (payload.append) {
+         // Append new files to existing inputs
+         const existingUris = new Set(state.inputs.map(input => input.uri));
+         const newFiles = payload.files.filter(file => !existingUris.has(file.uri));
+         
+         if (newFiles.length > 0) {
+           state.inputs.push(...newFiles);
+           showMessage(`Added ${newFiles.length} file${newFiles.length !== 1 ? 's' : ''}`, 'success');
+         } else {
+           showMessage('Files already selected', 'warning');
+         }
+       } else {
+         // Replace all inputs (fallback)
+         state.inputs = payload.files;
+       }
+       
+       vscode.setState(state);
+       updateFilesList();
+     }
+   }
 
   /**
    * Update the files list display
@@ -429,13 +444,25 @@
         return;
       }
 
-      // Add to inputs
-      const urlInput = {
-        id: Date.now().toString(),
-        name: url,
-        type: 'url',
-        uri: url,
-      };
+             // Create friendly display name for URL
+       let displayName = url;
+       try {
+         const urlObj = new URL(url);
+         displayName = urlObj.hostname + urlObj.pathname;
+         if (displayName.length > 50) {
+           displayName = displayName.substring(0, 47) + '...';
+         }
+       } catch (e) {
+         // Use full URL if parsing fails
+       }
+
+       // Add to inputs
+       const urlInput = {
+         id: Date.now().toString(),
+         name: displayName,
+         type: 'url',
+         uri: url,
+       };
 
       state.inputs.push(urlInput);
       vscode.setState(state);
