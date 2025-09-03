@@ -1,11 +1,11 @@
 {
   "name": "ai-content-developer",
   "displayName": "AI Content Developer",
-  "description": "Create professional technical documentation with AI assistance using VS Code Chat Participant API",
+  "description": "Create professional technical documentation with AI assistance using Microsoft standards. Features modern UI, multi-input support, and real-time LLM monitoring.",
   "version": "0.0.1",
   "publisher": "doveychase",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.102.0"
   },
   "categories": [
     "Other",
@@ -17,8 +17,12 @@
     "documentation",
     "content",
     "copilot",
-    "chat-participant",
-    "technical-writing"
+    "microsoft",
+    "technical-writing",
+    "markdown",
+    "standards",
+    "automation",
+    "llm-monitoring"
   ],
   "icon": "media/icon.png",
   "repository": {
